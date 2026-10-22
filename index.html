@@ -32,11 +32,11 @@
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
-    <a class="skip" href="#main">Skip to content</a>
-    <div class="site-shell">
-      <aside class="fixed-third" aria-label="Introduction">
+    <a class="skip-link" href="#main">Skip to content</a>
+    <div class="shell">
+      <aside class="shell__intro intro" aria-label="Introduction">
         <div
-          class="portrait"
+          class="intro__portrait portrait"
           role="img"
           aria-label="Line drawing of David's face: short hair, glasses with a straight top bar, and a beard"
         >
@@ -85,131 +85,156 @@
             <path d="M 545 296 L 562 292" />
           </svg>
         </div>
-        <h1 class="name">David Aerne</h1>
-        <p class="role">
-          Computational Designer · Interaction Developer<br /><a href="https://elastiq.ch"
+        <h1 class="intro__name">David Aerne</h1>
+        <p class="intro__role">
+          Computational Designer · Interaction Developer<br /><a
+            class="link"
+            href="https://elastiq.ch"
             >Elastiq</a
           >
           · Zürich
         </p>
-        <nav class="side-nav" aria-label="Social links">
-          <a href="https://bsky.app/profile/meodai.color.pizza">Bluesky</a>
-          <a href="https://x.com/meodai">X</a>
-          <a href="https://github.com/meodai">GitHub</a>
-          <a href="https://codepen.io/meodai">CodePen</a>
-          <a href="https://www.linkedin.com/in/davidaerne/">LinkedIn</a>
-          <a href="mailto:david@elastiq.ch">david@elastiq.ch</a>
+        <nav class="intro__links" aria-label="Social links">
+          <a class="intro__link" href="https://bsky.app/profile/meodai.color.pizza">Bluesky</a>
+          <a class="intro__link" href="https://x.com/meodai">X</a>
+          <a class="intro__link" href="https://github.com/meodai">GitHub</a>
+          <a class="intro__link" href="https://codepen.io/meodai">CodePen</a>
+          <a class="intro__link" href="https://www.linkedin.com/in/davidaerne/">LinkedIn</a>
+          <a class="intro__link" href="mailto:david@elastiq.ch">david@elastiq.ch</a>
         </nav>
       </aside>
 
-      <main id="main" class="right-two">
+      <main id="main" class="shell__content">
         <div class="opening">
-          <div class="opening-middle">
-            <p>
+          <div class="opening__text">
+            <p class="copy">
               I work in the triangle between code, art and design, with a particular obsession for
               color: how we perceive it, how we name it, and how we turn it into something we can
               play with. Most of my work starts with curiosity, becomes a prototype, and often ends
               up as an open-source tool.
             </p>
           </div>
-          <div class="opening-right">
-            <p>Color, generative art, interfaces — that's where I feel at home.</p>
+          <div class="opening__aside">
+            <p class="copy">Color, generative art, interfaces — that's where I feel at home.</p>
           </div>
         </div>
 
         <section class="highlights" aria-labelledby="proud">
-          <h2 class="eyebrow" id="proud">Some projects I'm particularly proud of</h2>
+          <h2 class="highlights__title title" id="proud">
+            Some projects I'm particularly proud of
+          </h2>
           <article class="highlight">
-            <h3 class="eyebrow"><a href="https://names.color.pizza/">Color Names</a></h3>
-            <p>A growing collection of almost 32,000 human-named colors.</p>
+            <h3 class="highlight__title title">
+              <a class="highlight__link" href="https://names.color.pizza/">Color Names</a>
+            </h3>
+            <p class="highlight__text copy">
+              A growing collection of almost 32,000 human-named colors.
+            </p>
           </article>
           <article class="highlight">
-            <h3 class="eyebrow"><a href="https://meodai.github.io/poline/">Poline</a></h3>
-            <p>Generative color palettes, drawn between anchor colors.</p>
+            <h3 class="highlight__title title">
+              <a class="highlight__link" href="https://meodai.github.io/poline/">Poline</a>
+            </h3>
+            <p class="highlight__text copy">
+              Generative color palettes, drawn between anchor colors.
+            </p>
           </article>
           <article class="highlight">
-            <h3 class="eyebrow"><a href="https://rybitten.space/">RYBitten</a></h3>
-            <p>RGB to RYB conversion after Itten's color wheel.</p>
+            <h3 class="highlight__title title">
+              <a class="highlight__link" href="https://rybitten.space/">RYBitten</a>
+            </h3>
+            <p class="highlight__text copy">RGB to RYB conversion after Itten's color wheel.</p>
           </article>
           <article class="highlight">
-            <h3 class="eyebrow"><a href="https://meodai.github.io/heerich/">heerich.js</a></h3>
-            <p>A tiny engine for 3D voxel scenes, rendered as plain SVG.</p>
+            <h3 class="highlight__title title">
+              <a class="highlight__link" href="https://meodai.github.io/heerich/">heerich.js</a>
+            </h3>
+            <p class="highlight__text copy">
+              A tiny engine for 3D voxel scenes, rendered as plain SVG.
+            </p>
           </article>
           <article class="highlight">
-            <h3 class="eyebrow"><a href="https://charcuterie.elastiq.ch/">Charcuterie</a></h3>
-            <p>
+            <h3 class="highlight__title title">
+              <a class="highlight__link" href="https://charcuterie.elastiq.ch/">Charcuterie</a>
+            </h3>
+            <p class="highlight__text copy">
               A visual explorer for Unicode characters, scripts and symbols, built to learn about
               embeddings.
             </p>
           </article>
           <article class="highlight">
-            <h3 class="eyebrow"><a href="https://okpalette.color.pizza/">OKpalette</a></h3>
-            <p>
+            <h3 class="highlight__title title">
+              <a class="highlight__link" href="https://okpalette.color.pizza/">OKpalette</a>
+            </h3>
+            <p class="highlight__text copy">
               Extracts palettes from images in OKLCh, picking colors that stay distinct from each
               other.
             </p>
           </article>
         </section>
 
-        <section class="about" aria-labelledby="about">
-          <h2 class="eyebrow" id="about">A bit about me</h2>
-          <div>
-            <p>
+        <section class="section" aria-labelledby="about">
+          <h2 class="section__title title" id="about">A bit about me</h2>
+          <div class="section__body">
+            <p class="copy">
               I grew up bilingual in Fribourg, obsessed with Lego and pretty much anything nerdy. My
               parents were against TV and video game consoles, so I'm forever grateful to my
               godfather for getting me the Game Boy I wasn't allowed to have, and to my uncles, who
               happened to own a lot of consoles. And apologies to all the parents in Fribourg whose
               doorbells I rang at 7 in the morning, asking if their kids could play NES with me.
             </p>
-            <p>
+            <p class="copy">
               As a teenager, I started Frilan, organising a big LAN party in Fribourg. Later came
               graffiti, DJing, and a record collection that's still far too large.
             </p>
-            <p>
+            <p class="copy">
               For a long time, I couldn't decide between art school and an apprenticeship as an
               <i lang="de">Informatiker</i>. I went with the latter, but never let go of the
               creative side. For years, I bounced between the two, until I realised I didn't
               actually have to choose. I could make a living doing both.
             </p>
-            <p>
+            <p class="copy">
               Honestly, that's still one of my favourite things about my life: getting paid to be
               curious about the things I love. Most days, it barely feels like work.
             </p>
-            <p>
+            <p class="copy">
               Today, I run Elastiq in Zürich, look after the z43 co-working space, and teach
               creative programming to beginners, for free. I'm particularly drawn to generative art
               and to the space where code becomes a creative medium. I tend to release projects once
               they feel good enough, then keep tinkering with them for years. Nothing ever feels
               entirely finished, and I quite like it that way.
             </p>
-            <p>
+            <p class="copy">
               Along the way, I've had the chance to collaborate with people whose work I admire,
-              including Rik Oostenbroek on <a href="https://verloop.xyz/">Verloop — Dégradé</a>, a
-              book exploring color and gradients. In 2026, I was genuinely surprised to win a
-              <a href="https://www.schweizerkulturpreise.ch/en/david-aerne-2026-en"
+              including Rik Oostenbroek on
+              <a class="link" href="https://verloop.xyz/">Verloop — Dégradé</a>, a book exploring
+              color and gradients. In 2026, I was genuinely surprised to win a
+              <a class="link" href="https://www.schweizerkulturpreise.ch/en/david-aerne-2026-en"
                 >Swiss Design Award</a
               >
               in the Interaction Design category for my work around color.
             </p>
-            <p>
+            <p class="copy">
               I still mostly follow my curiosity, make things that I wish existed, and share them in
               the hope that someone else finds them useful, inspiring, or just fun to play with.
             </p>
           </div>
         </section>
 
-        <section class="about support" aria-labelledby="support">
-          <h2 class="eyebrow" id="support">Want to support my work?</h2>
-          <div>
-            <p>
+        <section class="section section--support" aria-labelledby="support">
+          <h2 class="section__title title" id="support">Want to support my work?</h2>
+          <div class="section__body">
+            <p class="copy">
               I'd love to keep exploring color and design tools, but I also need to make a living.
               If you like what I do, consider
-              <a href="https://names.color.pizza/adopt/">adopting a color</a>. Every color can be
-              adopted just once, so you become its one and only patron, and your name goes on it. It
-              keeps Color Names, its API and my other open projects going.
+              <a class="link" href="https://names.color.pizza/adopt/">adopting a color</a>. Every
+              color can be adopted just once, so you become its one and only patron, and your name
+              goes on it. It keeps Color Names, its API and my other open projects going.
             </p>
-            <p>
-              You can also <a href="https://github.com/sponsors/meodai">sponsor me on GitHub</a>.
+            <p class="copy">
+              You can also
+              <a class="link" href="https://github.com/sponsors/meodai">sponsor me on GitHub</a>, or
+              work with me through <a class="link" href="https://elastiq.ch">Elastiq</a>.
             </p>
           </div>
         </section>
