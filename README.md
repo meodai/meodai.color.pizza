@@ -28,9 +28,6 @@ npm run deploy   # build and publish with Wrangler
   those, and the rest follows. Every neutral comes from one six-step ramp from paper to ink:
   hairlines are the step next to the paper, muted text the step closest to the paper that
   still reads at 4.5:1, and ink and selected text the steps with the best contrast.
-- The crayon in the corner opens a panel that runs the same rules in the browser
-  (`src/recolor.js`): visitors pick the three primitives and Design Book re-derives the rest.
-  It is loaded only when the panel opens, so the page itself stays almost script-free.
 - The portrait in `index.html` is a hand-traced SVG line drawing.
 - Titles and text use [Libre Caslon Condensed](https://github.com/ertekinno/libre-caslon-condensed),
   subset to Latin, under the SIL Open Font License (`src/fonts/LibreCaslonCondensed-OFL.txt`).

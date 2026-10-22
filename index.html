@@ -240,58 +240,5 @@
         </section>
       </main>
     </div>
-
-    <button class="crayon" type="button" popovertarget="palette" aria-label="Recolor this page">
-      <svg class="crayon__drawing" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M 5.9 13.9 L 16.9 2.9 L 21.1 7.1 L 10.1 18.1" />
-        <path d="M 8.9 10.9 L 13.1 15.1" />
-        <path d="M 13.9 5.9 L 18.1 10.1" />
-        <path class="crayon__tip" d="M 5.9 13.9 L 3 21 L 10.1 18.1 Z" />
-      </svg>
-    </button>
-    <div class="palette" id="palette" popover>
-      <h2 class="palette__title">Recolor this page</h2>
-      <p class="palette__intro">
-        Pick three colors. Design Book derives the rest with the same rules the stylesheet is built
-        from.
-      </p>
-      <div class="palette__inputs">
-        <label class="palette__field"
-          ><input class="palette__input" type="color" name="paper" value="#f7f7f7" /> Paper</label
-        >
-        <label class="palette__field"
-          ><input class="palette__input" type="color" name="ink" value="#303030" /> Ink</label
-        >
-        <label class="palette__field"
-          ><input class="palette__input" type="color" name="accent" value="#ff4f2b" /> Accent</label
-        >
-      </div>
-      <dl class="palette__derived">
-        <div class="palette__token">
-          <dt class="palette__name">
-            <span class="palette__swatch palette__swatch--muted"></span>Muted text
-          </dt>
-          <dd class="palette__rule">the step closest to the paper that reads at 4.5:1</dd>
-          <dd class="palette__value" data-token="color.muted"></dd>
-        </div>
-        <div class="palette__token">
-          <dt class="palette__name">
-            <span class="palette__swatch palette__swatch--rule"></span>Hairlines
-          </dt>
-          <dd class="palette__rule">the step next to the paper</dd>
-          <dd class="palette__value" data-token="color.rule"></dd>
-        </div>
-        <div class="palette__token">
-          <dt class="palette__name">
-            <span class="palette__swatch palette__swatch--on-accent"></span>Selected text
-          </dt>
-          <dd class="palette__rule">the step that reads best on the accent</dd>
-          <dd class="palette__value" data-token="color.on-accent"></dd>
-        </div>
-      </dl>
-      <p class="palette__status" role="status"></p>
-      <button class="palette__reset" type="button">Reset</button>
-    </div>
-    <script type="module" src="/src/main.js"></script>
   </body>
 </html>
