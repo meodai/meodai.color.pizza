@@ -1,0 +1,233 @@
+// Projects, newest first. `story` is HTML, told in first person.
+// Not on the page yet and not rendered by anything: a parked draft for a
+// fuller project list. Most stories are drafts based on the READMEs.
+
+export const intro = `Most of these started as little experiments on <a href="https://codepen.io/meodai">CodePen</a> that got out of hand. Some I make and then leave alone. Many I keep working on for years, because a newer project gives me ideas for an older one.`;
+
+export default [
+  {
+    year: 2026,
+    title: "names.color.pizza",
+    url: "https://names.color.pizza/",
+    story: `Every name in the Color Names list gets its own page: a description, how it mixes, its neighbors, and public-domain art that shares its color. The home page is a wall of all ~32,000 names, hue across and light to dark down.`,
+  },
+  {
+    year: 2026,
+    title: "art-colors",
+    url: "https://github.com/meodai/art-colors",
+    story: `The palettes of artworks from museum open-access collections, with how much of each picture every color takes up: about 26,500 works from the Art Institute of Chicago and 14,900 from Cleveland, refreshed weekly and free to use for anything (CC0).`,
+  },
+  {
+    year: 2026,
+    title: "bouffont",
+    url: "https://meodai.github.io/bouffont/",
+    story: `The puffy letters on this page. bouffont thins every glyph of a font down to its centre lines, redraws it with one pen and grows it back into bubbles, blocks or coral. Seeded and deterministic, so the same text always grows the same way.`,
+  },
+  {
+    year: 2026,
+    title: "colornames-oklab",
+    url: "https://meodai.github.io/colornames-oklab/",
+    story: `When I plotted Color Names in a perceptual color space, the names clustered where people historically looked: reds, skin tones, popular pastels. Whole regions sat almost empty. This is the experiment in the other direction: 4,444 names spread evenly over OKLab, covering the full Rec. 2020 gamut.`,
+  },
+  {
+    year: 2026,
+    title: "kurvenlineal",
+    url: "https://meodai.github.io/kurvenlineal/",
+    story: `Hand it the sizes you already have, a type scale or a spacing scale, and it fits the Bézier easing curve that produces them.`,
+  },
+  {
+    year: 2026,
+    title: "astrobot",
+    url: "https://meodai.github.io/astrobot/",
+    story: `Gives each Claude model a small, permanent astrological identity: a randomly rolled birth chart and a color it gets to name. Then the current sky tints its tone a little every day.`,
+  },
+  {
+    year: 2026,
+    title: "color-expert",
+    url: "https://github.com/meodai/skill.color-expert",
+    story: `An agent skill that turns a coding agent into a color science expert. It started as a skill file with a few color theory notes and grew into a knowledge base, as I kept pasting in the videos, articles, tools and papers I find myself returning to again and again.`,
+  },
+  {
+    year: 2026,
+    title: "Token Beam",
+    url: "https://github.com/meodai/token-beam",
+    story: `Syncs design tokens between tools, aligned with the W3C Design Tokens spec, so a palette can travel from my color tools straight into Figma.`,
+  },
+  {
+    year: 2026,
+    title: "Ray Color",
+    url: "https://meodai.github.io/ray-color/",
+    story: `It started with a Philips Hue setup and a tennis ball on my table. Every time the room lights changed, the ball turned into a new palette, and the colors always fit together because they were made of the same light. Ray Color simulates that room: you place lights and sample the sphere instead of picking colors from a wheel.`,
+  },
+  {
+    year: 2026,
+    title: "CuspHanger",
+    url: "https://meodai.github.io/cusphanger/",
+    story: `A 2008 EuroVis paper describes generating sequential and diverging palettes by walking a Bézier curve through the gamut triangle of a hue. I re-expressed it in OKLCH (and LCHuv, LCH and HCT), with roughly the same API as RampenSau.`,
+  },
+  {
+    year: 2026,
+    title: "nutelch",
+    url: "https://meodai.github.io/nutelch/",
+    story: `A nut has a shell, and so does a perceptual color space. nutelch measures chroma relative to that shell, so “halfway to the boundary” means the same thing at any lightness and hue, and colors stay in gamut.`,
+  },
+  {
+    year: 2026,
+    title: "Color Names Timeline",
+    url: "https://meodai.github.io/color-names-timeline/",
+    story: `Nine years of contributions to Color Names, replayed as a point cloud. Every color fades in on the day it was added and briefly links up with the others from the same commit, while the cloud morphs between RGB, OKLab and other models.`,
+  },
+  {
+    year: 2026,
+    title: "Design Book",
+    url: "https://meodai.github.io/design-book/",
+    story: `Design systems usually store answers: a hex here, a spacing value there. I wanted to store the decisions instead. In Design Book a text color is “the highest-contrast color from this palette against this background”, and when the inputs change, every dependent token is decided again.`,
+  },
+  {
+    year: 2026,
+    title: "Charcuterie",
+    url: "https://charcuterie.elastiq.ch/",
+    story: `A way for me to learn about embeddings: a visual explorer for Unicode characters, scripts and symbols, where you find glyphs by what they look like and what they are related to.`,
+  },
+  {
+    year: 2026,
+    title: "Heerich",
+    url: "https://meodai.github.io/heerich/",
+    story: `A tiny engine for voxel scenes rendered as plain SVG, with no WebGL and no canvas. It is named after Erwin Heerich, the sculptor known for his geometric cardboard sculptures.`,
+  },
+  {
+    year: 2026,
+    title: "Color Palette Shader",
+    url: "https://meodai.github.io/color-palette-shader/",
+    story: `It shows how a palette covers all possible colors: every pixel snaps to its nearest palette color. If one of your colors only claims a sliver, it is almost redundant; if it claims a big region, it is pulling its weight.`,
+  },
+  {
+    year: 2026,
+    title: "PickyPalette",
+    url: "https://pickypalette.color.pizza/",
+    story: `A color picker where you sculpt the whole palette on a color model. Colors claim territory by perceptual distance, so moving one reshapes all the others. The canvas is the instrument.`,
+  },
+  {
+    year: 2026,
+    title: "OKpalette",
+    url: "https://okpalette.color.pizza/",
+    story: `Palette extraction from images in OKLCh. It looks at the image first and favors colorful details when they are rare, then picks colors that repel each other so the palette stays distinct.`,
+  },
+  {
+    year: 2025,
+    title: "DittoTones",
+    url: "https://meodai.github.io/dittoTones/",
+    story: `Most palette generators ignore the careful work behind palettes like Tailwind's or Radix's. DittoTones copies their lightness and chroma curves and maps your hue onto them, so a single color becomes a full scale with similar contrast.`,
+  },
+  {
+    year: 2025,
+    title: "Pro Color Harmonies",
+    url: "https://meodai.github.io/pro-color-harmonies/",
+    story: `Rotating a hue by 120° is mathematically correct and often looks muddy. This library generates harmonies in OKLCH, steers clear of the muddy zones and gives colors roles, building on Ryan Feigenbaum's research.`,
+  },
+  {
+    year: 2025,
+    title: "Poline Orbits",
+    url: "https://poline-orbits.color.pizza/",
+    story: `A circular playground for Poline, to explore palettes and how colors relate by moving them around in orbits.`,
+  },
+  {
+    year: 2025,
+    title: "Color Router",
+    url: "https://github.com/meodai/color-router",
+    story: `A color system that behaves like a spreadsheet: colors reference other colors through functions, and changes cascade.`,
+  },
+  {
+    year: 2024,
+    title: "Verloop",
+    url: "https://verloop.xyz/",
+    story: `Dégradé, a large-format book of gradients I made with Rik Oostenbroek, where handcrafted color transitions meet algorithmic composition. It was shown at Paris Photo 2024.`,
+  },
+  {
+    year: 2024,
+    title: "RYBitten",
+    url: "https://rybitten.space/",
+    pen: "PwZpjMW",
+    story: `Translates between RGB and a red-yellow-blue color space modeled on Johannes Itten's color wheel. It is for generative artists who want the painterly harmonies of RYB with a screen's colors.`,
+  },
+  {
+    year: 2023,
+    title: "Albers",
+    url: "https://albers.elastiq.ch/",
+    story: `A generative study of how colors interact, after Josef Albers and his squares.`,
+  },
+  {
+    year: 2023,
+    title: "Poline",
+    url: "https://meodai.github.io/poline/",
+    story: `A palette generator that draws lines between anchor colors in polar coordinates. It is a small library, and it won a <a href="https://www.schweizerkulturpreise.ch/en/david-aerne-2026-en">Swiss Design Award</a> in 2026.`,
+  },
+  {
+    year: 2022,
+    title: "Palette Aldente",
+    url: "https://github.com/meodai/palette-aldente",
+    story: `A collection of color palettes I want to reuse, as a library and a little site to curate and share them. Studio Yorktown built their Color Town Hall on it.`,
+  },
+  {
+    year: 2022,
+    title: "Color Name API",
+    url: "https://meodai.github.io/color-name-api/",
+    story: `A REST API that gives you a name for any color value, built on the Color Names list.`,
+  },
+  {
+    year: 2022,
+    title: "RampenSau",
+    url: "https://meodai.github.io/rampensau/",
+    story: `Palettes from hue cycling and easing functions, for data visualization, generative art or just fun.`,
+  },
+  {
+    year: 2022,
+    title: "fxhash",
+    url: "https://www.fxhash.xyz/u/meodai",
+    story: `A collection of my generative art pieces, released on fxhash.`,
+  },
+  {
+    year: 2021,
+    title: "FettePalette",
+    url: "https://meodai.github.io/fettepalette/",
+    story: `Color ramps inspired by pixel art and illustration, where hues shift as they get lighter or darker. It uses curves through the HSV color model.`,
+  },
+  {
+    year: 2021,
+    title: "Color Description",
+    url: "https://words.github.io/color-description/",
+    story: `Turns a hex value into words: #0a4a7a becomes blue, navy, deep, rich, cool.`,
+  },
+  {
+    year: 2021,
+    title: "Parrot",
+    url: "https://parrot.color.pizza/",
+    story: `A bot that posts random colors and collects the names people invent for them, with a companion site.`,
+  },
+  {
+    year: 2020,
+    title: "FarbVelo",
+    url: "https://farbvelo.elastiq.ch/",
+    pen: "RerqjG",
+    story: `Swiss German for “color bicycle”. It uses simple rules and lots of random numbers to cycle through color harmonies. I find it almost psychedelic with some white noise on.`,
+  },
+  {
+    year: 2017,
+    title: "Color Names",
+    url: "https://names.color.pizza/",
+    pen: "VMpNdQ",
+    story: `It started at a former job, when I wanted to explore colors and took the color names from Wikipedia. There weren't nearly enough: different reds ended up with the same name. Many of the names were also colonial, sexist or worse. Over the years it became my escape project. Whenever I travel I feel inspired to come up with new names, and with almost 32,000 of them it has become an awesome playground for experimenting with data visualization.`,
+  },
+  {
+    year: 2017,
+    title: "3D Color Names",
+    url: "https://codepen.io/meodai/full/zdgXJj",
+    story: `The whole Color Names list plotted in several 3D color models, to see where names crowd together and where colors are still waiting for one.`,
+  },
+  {
+    year: 2016,
+    title: "dialog(size)",
+    url: "https://github.com/meodai/dialog-size",
+    story: `A relative size system in Sass, made to ease the dialog between design and frontend. Its sibling dialog(typography) manages type across breakpoints.`,
+  },
+];

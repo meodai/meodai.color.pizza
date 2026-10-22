@@ -1,0 +1,10 @@
+{
+  // Static site: Vite builds to dist/, Workers serves it as assets.
+  "name": "meodai",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page",
+  },
+  "routes": [{ "pattern": "meodai.color.pizza", "custom_domain": true }],
+}

@@ -1,0 +1,391 @@
+@layer reset, tokens, base, layout, components;
+
+/* Libre Caslon Condensed (SIL OFL, see fonts/), subset to Latin plus "→". */
+@font-face {
+  font-family: "Libre Caslon Condensed";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/libre-caslon-condensed-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Libre Caslon Condensed";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/libre-caslon-condensed-400-italic.woff2") format("woff2");
+}
+
+@layer reset {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+  body,
+  h1,
+  h2,
+  h3,
+  p {
+    margin: 0;
+  }
+  svg {
+    display: block;
+  }
+}
+
+@layer tokens {
+  :root {
+    color-scheme: light dark;
+    --paper: #f7f7f7;
+    --ink: #303030;
+    --muted: #707070;
+    --rule: #dedede;
+    --accent: #ff4f2b;
+    /* Text on the accent, readable in both themes (5.5:1 and 7.6:1). */
+    --on-accent: #161616;
+
+    --font: "Libre Caslon Condensed", Georgia, serif;
+    --text: 1.0625rem;
+    /* Body copy sits on a 20 pt line. */
+    --leading: 1.6667rem;
+
+    --gap: 3.4375rem;
+    --gutter: 2.75rem;
+    --shell-top: 2.375rem;
+    --portrait-width: 5.5rem;
+    --portrait-gap: 1.25rem;
+    --measure: 23.125rem;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #161616;
+      --ink: #e8e8e8;
+      --muted: #9a9a9a;
+      --rule: #2e2e2e;
+      --accent: #ff7a5c;
+    }
+  }
+  @media (max-width: 68.75em) {
+    :root {
+      --gap: 2.125rem;
+      --gutter: 1.875rem;
+    }
+  }
+  @media (max-width: 48.75em) {
+    :root {
+      --gutter: 1.5625rem;
+    }
+  }
+  @media (max-width: 33.75em) {
+    :root {
+      --gap: 1.5rem;
+      --gutter: 1.375rem;
+    }
+  }
+}
+
+@layer base {
+  html {
+    scrollbar-color: var(--accent) var(--paper);
+  }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font: var(--text) / 1.5 var(--font);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,
+  h2,
+  h3 {
+    font-weight: 400;
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  a:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.25rem;
+  }
+  p a {
+    text-decoration: underline;
+    text-decoration-color: var(--rule);
+    text-underline-offset: 0.1875rem;
+  }
+  p a:hover {
+    text-decoration-color: var(--accent);
+  }
+  ::selection {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+  :focus-visible {
+    outline: 2px solid var(--muted);
+    outline-offset: 0.25rem;
+  }
+}
+
+@layer layout {
+  /* Three columns: a sticky intro on the left, content across the other two. */
+  .site-shell {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: var(--gap);
+    max-inline-size: 90.625rem;
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+  .fixed-third {
+    grid-column: 1;
+    position: sticky;
+    inset-block-start: 0;
+    align-self: start;
+    display: flex;
+    flex-direction: column;
+    block-size: 100svh;
+    max-inline-size: 22.8125rem;
+    padding-block: var(--shell-top);
+  }
+  .right-two {
+    grid-column: 2 / 4;
+    min-inline-size: 0;
+    /* The first paragraph lines up with the name under the portrait: the
+       portrait's height (its viewBox is 440 × 600) plus its gap. Without
+       text-box trimming, an offset makes up for the different leading. */
+    padding-block-start: calc(
+      var(--shell-top) + var(--portrait-width) * 600 / 440 + var(--portrait-gap) - 0.05rem
+    );
+  }
+  /* Where supported, trim the name and the opening lines to their cap height,
+     so their capitals line up exactly in any font rendering. */
+  @supports (text-box: trim-start cap alphabetic) {
+    .right-two {
+      padding-block-start: calc(
+        var(--shell-top) + var(--portrait-width) * 600 / 440 + var(--portrait-gap)
+      );
+    }
+  }
+
+  /* Two-column rows inside the content: text in the middle, a label right. */
+  .opening,
+  .about,
+  .highlight {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--gap);
+  }
+  .opening {
+    min-block-size: 25.625rem;
+  }
+  .about,
+  .highlight {
+    border-block-start: 1px solid var(--rule);
+  }
+
+  @media (max-height: 35em) and (min-width: 48.8125em) {
+    .fixed-third {
+      block-size: auto;
+    }
+  }
+  @media (max-width: 48.75em) {
+    .site-shell {
+      display: block;
+    }
+    .fixed-third {
+      position: static;
+      block-size: auto;
+      max-inline-size: 26.25rem;
+      padding-block: 1.75rem 1.875rem;
+    }
+    .right-two {
+      padding-block-start: 2.1875rem;
+      border-block-start: 1px solid var(--rule);
+    }
+    .opening {
+      min-block-size: 0;
+    }
+  }
+  @media (max-width: 33.75em) {
+    .opening,
+    .about,
+    .highlight {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+@layer components {
+  /* Skip link, hidden until focused. */
+  .skip {
+    position: fixed;
+    z-index: 90;
+    inset-block-start: -5.625rem;
+    inset-inline-start: 1.125rem;
+    padding: 0.75rem 1.125rem;
+    background: var(--paper);
+  }
+  .skip:focus {
+    inset-block-start: 0.875rem;
+  }
+
+  /* Line portrait above the name, drawn with the same hairlines. */
+  .portrait {
+    inline-size: var(--portrait-width);
+    margin-block-end: var(--portrait-gap);
+  }
+  .portrait__drawing {
+    inline-size: 100%;
+    block-size: auto;
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 1px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .portrait__drawing path {
+    vector-effect: non-scaling-stroke;
+  }
+  .portrait__drawing .portrait__pupil {
+    stroke: var(--accent);
+  }
+
+  .name {
+    font-size: 2.125rem;
+    line-height: 1.1;
+  }
+  .role,
+  .side-nav {
+    font-size: 0.9375rem;
+    line-height: 1.4;
+    letter-spacing: 0.01em;
+    color: var(--muted);
+  }
+  .role {
+    margin-block-start: 1.75rem;
+  }
+  .side-nav {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-block-start: auto;
+    padding-block-start: 1.5rem;
+  }
+
+  .eyebrow {
+    font-size: 1.375rem;
+    line-height: 1.3;
+  }
+
+  /* Body copy: one size on the 20 pt line, a paragraph's gap between. */
+  .opening-middle,
+  .about p,
+  .highlight p {
+    font-size: var(--text);
+    line-height: var(--leading);
+  }
+  .opening-middle,
+  .about > div,
+  .highlight p {
+    max-inline-size: var(--measure);
+  }
+  .opening-middle p + p,
+  .about p + p {
+    margin-block-start: var(--leading);
+  }
+  .opening-right {
+    font-size: 1rem;
+  }
+  @supports (text-box: trim-start cap alphabetic) {
+    .name,
+    .opening-middle > p:first-child,
+    .opening-right > p:first-child {
+      text-box: trim-start cap alphabetic;
+    }
+  }
+
+  /* Text in the middle column, its label to the right. */
+  .about > .eyebrow,
+  .highlight h3 {
+    grid-area: 1 / 2;
+  }
+  .about > div,
+  .highlight p {
+    grid-area: 1 / 1;
+  }
+  .about {
+    padding-block: 1.5625rem 8.125rem;
+  }
+  /* The biography is followed by the support block: less space between. */
+  .about:has(+ .support) {
+    padding-block-end: 5rem;
+  }
+
+  .highlights {
+    padding-block-end: 5rem;
+  }
+  .highlights > .eyebrow {
+    margin-block-end: 1.5625rem;
+  }
+  .highlight {
+    padding-block: 1.5625rem 1.875rem;
+  }
+  /* External-link mark: the font's own arrow, turned to point up and out.
+     The alt text after the slash keeps screen readers from reading it. */
+  .highlight h3 a::after {
+    content: "→" / "";
+    display: inline-block;
+    margin-inline-start: 0.15em;
+    font-size: 0.9em;
+    rotate: -45deg;
+    translate: 0 -0.2em;
+  }
+
+  @media (max-height: 35em) and (min-width: 48.8125em) {
+    .side-nav {
+      margin-block-start: 2.1875rem;
+    }
+  }
+  @media (max-width: 48.75em) {
+    .role {
+      margin-block-start: 1.25rem;
+    }
+    .side-nav {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 0.375rem 1.375rem;
+      margin-block-start: 1.75rem;
+    }
+    .opening {
+      margin-block-end: 3.4375rem;
+    }
+  }
+  @media (max-width: 33.75em) {
+    .opening {
+      gap: 2rem;
+      margin-block-end: 2.875rem;
+    }
+    .about {
+      gap: 1.125rem;
+      padding-block-end: 5.625rem;
+    }
+    .highlight {
+      gap: 0.5rem;
+    }
+    .about > .eyebrow,
+    .about > div,
+    .highlight h3,
+    .highlight p {
+      grid-area: auto;
+    }
+    .opening-middle,
+    .about > div,
+    .highlight p {
+      max-inline-size: none;
+    }
+  }
+}
