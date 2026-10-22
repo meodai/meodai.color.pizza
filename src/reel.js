@@ -39,19 +39,31 @@ function place() {
   reel.style.setProperty("--reel-shift", `${clamped - natural}px`);
 }
 
-function play(list, index) {
-  list.forEach((video, i) => {
-    if (i !== index) return video.pause();
-    load(video);
-    video.play().catch(() => {});
-  });
-}
-
 function show(index) {
   reel.classList.toggle("reel--visible", index >= 0);
-  if (index >= 0) track.style.setProperty("--reel-index", index);
-  play(videos, index);
+  if (index < 0) return;
+  track.style.setProperty("--reel-index", index);
+  run(videos[index]);
 }
+
+function run(video) {
+  load(video);
+  video.play().catch(() => {});
+}
+
+function swap(playing, paused) {
+  paused.forEach((video) => video.pause());
+  playing.forEach((video) => moving.matches && video.childElementCount && run(video));
+}
+
+const nearby = new IntersectionObserver(
+  (entries) => {
+    for (const entry of entries) {
+      if (entry.isIntersecting && phone.matches && moving.matches) run(entry.target);
+    }
+  },
+  { rootMargin: "50% 0px" },
+);
 
 function inlineVideos() {
   if (!inline.length) {
@@ -60,6 +72,7 @@ function inlineVideos() {
       video.classList.add("highlight__video");
       video.muted = true;
       highlight.querySelector(".highlight__media").append(video);
+      nearby.observe(video);
       return video;
     });
   }
@@ -70,9 +83,9 @@ function update() {
   if (ready && phone.matches) {
     if (reel.parentElement !== home) home.insertBefore(reel, homeNext);
     show(-1);
-    return play(inlineVideos(), moving.matches ? highlights.indexOf(inView) : -1);
+    return swap(inlineVideos(), videos);
   }
-  play(inline, -1);
+  swap(videos, inline);
   const focus = tablet.matches ? inView : hovered;
   const index =
     ready && (wide.matches || tablet.matches)
