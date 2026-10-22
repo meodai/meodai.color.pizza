@@ -7,6 +7,8 @@ export function recolor(panel) {
   const inputs = panel.querySelectorAll(".palette__input");
   const values = panel.querySelectorAll(".palette__value");
   const status = panel.querySelector(".palette__status");
+  const themeColors = [...document.querySelectorAll('meta[name="theme-color"]')];
+  const defaultThemeColors = themeColors.map((meta) => meta.content);
   const style = document.createElement("style");
   document.head.append(style);
   let book;
@@ -20,6 +22,7 @@ export function recolor(panel) {
     book = dark.matches ? night : light;
     style.textContent = "";
     status.textContent = "";
+    themeColors.forEach((meta, i) => (meta.content = defaultThemeColors[i]));
     inputs.forEach((input) => (input.value = book.resolve(`base.${input.name}`)));
     showValues();
   }
@@ -29,6 +32,7 @@ export function recolor(panel) {
       book.getScope("base").set(input.name, color(input.value));
       try {
         style.textContent = book.render("css-variables");
+        themeColors.forEach((meta) => (meta.content = book.resolve("color.paper")));
         showValues();
         status.textContent = "";
       } catch {
