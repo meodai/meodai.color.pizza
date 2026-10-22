@@ -1,9 +1,7 @@
 @layer reset, tokens, base, layout, components;
 
-/* Colors come from Design Book: src/tokens.js renders src/tokens.css. */
 @import "./tokens.css" layer(tokens);
 
-/* Libre Caslon Condensed (SIL OFL, see fonts/), subset to Latin plus "→". */
 @font-face {
   font-family: "Libre Caslon Condensed";
   font-style: normal;
@@ -19,7 +17,6 @@
   src: url("./fonts/libre-caslon-condensed-400-italic.woff2") format("woff2");
 }
 
-/* Element defaults only; everything styled below goes through a class. */
 @layer reset {
   *,
   *::before,
@@ -57,7 +54,6 @@
 
     --font: "Libre Caslon Condensed", Georgia, serif;
     --text: 1.0625rem;
-    /* Body copy sits on a 20 pt line. */
     --leading: 1.6667rem;
 
     --gap: 3.4375rem;
@@ -86,7 +82,6 @@
   }
 }
 
-/* Page-wide defaults. */
 @layer base {
   html {
     scrollbar-color: var(--color-accent) var(--color-paper);
@@ -108,7 +103,6 @@
 }
 
 @layer layout {
-  /* Three columns: a sticky intro on the left, content across the other two. */
   .shell {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -129,15 +123,10 @@
   .shell__content {
     grid-column: 2 / 4;
     min-inline-size: 0;
-    /* The first paragraph lines up with the name under the portrait: the
-       portrait's height (its viewBox is 440 × 600) plus its gap. Without
-       text-box trimming, an offset makes up for the different leading. */
     padding-block-start: calc(
       var(--shell-top) + var(--portrait-width) * 600 / 440 + var(--portrait-gap) - 0.05rem
     );
   }
-  /* Where supported, the name and opening lines are trimmed to their cap
-     height (see components), so the offset isn't needed. */
   @supports (text-box: trim-start cap alphabetic) {
     .shell__content {
       padding-block-start: calc(
@@ -169,7 +158,6 @@
 }
 
 @layer components {
-  /* Skip link, hidden until focused. */
   .skip-link {
     position: fixed;
     z-index: 90;
@@ -182,8 +170,6 @@
     inset-block-start: 0.875rem;
   }
 
-  /* Links: quiet by default, a faint underline in running text; on hover
-     every link gets the same orange underline. */
   .link {
     text-decoration: underline;
     text-decoration-color: var(--color-rule);
@@ -199,7 +185,6 @@
     text-underline-offset: 0.1875rem;
   }
 
-  /* Titles and body copy. */
   .title {
     font-size: 1.375rem;
     line-height: 1.3;
@@ -212,7 +197,6 @@
     margin-block-start: var(--leading);
   }
 
-  /* Line portrait, drawn with the same hairlines as the page. */
   .portrait {
     inline-size: var(--portrait-width);
   }
@@ -232,7 +216,6 @@
     stroke: var(--color-accent);
   }
 
-  /* Intro: portrait, name, role, and the links pushed to the bottom. */
   .intro {
     display: flex;
     flex-direction: column;
@@ -262,7 +245,6 @@
     padding-block-start: 1.5rem;
   }
 
-  /* Two-column rows: text in the middle column, a label to the right. */
   .opening,
   .section,
   .highlight {
@@ -305,8 +287,6 @@
     border-block-start: 1px solid var(--color-rule);
     padding-block: 1.5625rem 1.875rem;
   }
-  /* External-link mark: the font's own arrow, turned to point up and out.
-     The alt text after the slash keeps screen readers from reading it. */
   .highlight__link::after {
     content: "→" / "";
     display: inline-block;
@@ -320,9 +300,155 @@
     border-block-start: 1px solid var(--color-rule);
     padding-block: 1.5625rem 8.125rem;
   }
-  /* A section followed by the support block: less space between. */
   .section:has(+ .section--support) {
     padding-block-end: 5rem;
+  }
+
+  .crayon {
+    position: fixed;
+    z-index: 80;
+    inset-block-end: var(--gutter);
+    inset-inline-end: var(--gutter);
+    padding: 0.5rem;
+    border: 0;
+    background: none;
+    color: var(--color-ink);
+    cursor: pointer;
+  }
+  .crayon__drawing {
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1px;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    transition: rotate 0.2s;
+  }
+  .crayon__drawing path {
+    vector-effect: non-scaling-stroke;
+  }
+  .crayon__tip {
+    stroke: var(--color-accent);
+  }
+  .crayon:hover .crayon__drawing {
+    rotate: -12deg;
+  }
+
+  .palette {
+    inset: auto calc(var(--gutter) + 3rem) var(--gutter) auto;
+    inline-size: min(20rem, 100vw - 2 * var(--gutter));
+    margin: 0;
+    padding: 1.25rem;
+    border: 1px solid var(--color-rule);
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-size: 0.9375rem;
+    line-height: 1.4;
+  }
+  .palette__title {
+    font-size: 1.375rem;
+    line-height: 1.3;
+  }
+  .palette__intro,
+  .palette__rule,
+  .palette__value,
+  .palette__status {
+    color: var(--color-muted);
+  }
+  .palette__intro {
+    margin-block: 0.5rem 1.25rem;
+  }
+  .palette__inputs {
+    display: flex;
+    gap: 1.25rem;
+  }
+  .palette__field {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+  }
+  .palette__input {
+    inline-size: 1.5rem;
+    block-size: 1.5rem;
+    padding: 0;
+    border: 1px solid var(--color-rule);
+    border-radius: 50%;
+    background: none;
+    cursor: pointer;
+    appearance: none;
+  }
+  .palette__input::-webkit-color-swatch-wrapper {
+    padding: 0;
+  }
+  .palette__input::-webkit-color-swatch {
+    border: 0;
+    border-radius: 50%;
+  }
+  .palette__input::-moz-color-swatch {
+    border: 0;
+    border-radius: 50%;
+  }
+  .palette__derived {
+    margin-block: 1.25rem 0;
+  }
+  .palette__token {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    column-gap: 1rem;
+    padding-block: 0.625rem;
+    border-block-start: 1px solid var(--color-rule);
+  }
+  .palette__name {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .palette__rule {
+    grid-row: 2;
+    margin: 0;
+    padding-inline-start: 1.5rem;
+    font-style: italic;
+  }
+  .palette__value {
+    grid-area: 1 / 2;
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .palette__swatch {
+    inline-size: 1rem;
+    block-size: 1rem;
+    border: 1px solid var(--color-rule);
+    border-radius: 50%;
+  }
+  .palette__swatch--muted {
+    background: var(--color-muted);
+  }
+  .palette__swatch--rule {
+    background: var(--color-rule);
+  }
+  .palette__swatch--on-accent {
+    background: var(--color-on-accent);
+  }
+  .palette__status:not(:empty) {
+    margin-block-start: 0.625rem;
+  }
+  .palette__reset {
+    margin-block-start: 0.625rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-decoration: underline;
+    text-decoration-color: var(--color-rule);
+    text-underline-offset: 0.1875rem;
+    cursor: pointer;
+  }
+  .palette__reset:hover {
+    text-decoration-color: var(--color-accent);
+    text-decoration-thickness: 2px;
   }
 
   @media (max-height: 35em) and (min-width: 48.8125em) {

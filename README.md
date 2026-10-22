@@ -27,6 +27,9 @@ npm run deploy   # build and publish with Wrangler
   primitives (paper, ink, accent) carry each theme; dark mode is a layer that overrides only
   those, and the rest follows. The muted grey is picked as the one closest to the paper that
   still reads at 4.5:1, and the selected-text color as the best contrast on the accent.
+- The crayon in the corner opens a panel that runs the same rules in the browser
+  (`src/recolor.js`): visitors pick the three primitives and Design Book re-derives the rest.
+  It is loaded only when the panel opens, so the page itself stays almost script-free.
 - The portrait in `index.html` is a hand-traced SVG line drawing.
 - Titles and text use [Libre Caslon Condensed](https://github.com/ertekinno/libre-caslon-condensed),
   subset to Latin, under the SIL Open Font License (`src/fonts/LibreCaslonCondensed-OFL.txt`).

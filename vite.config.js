@@ -5,8 +5,6 @@ import { defineConfig } from "vite";
 const tokensSource = fileURLToPath(new URL("./src/tokens.js", import.meta.url));
 const tokensOutput = fileURLToPath(new URL("./src/tokens.css", import.meta.url));
 
-// Renders the Design Book tokens in src/tokens.js to src/tokens.css, before a
-// build and whenever tokens.js changes in dev.
 function designBookTokens() {
   async function write() {
     const { tokensCSS } = await import(`${pathToFileURL(tokensSource).href}?t=${Date.now()}`);
