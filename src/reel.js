@@ -121,6 +121,7 @@ const idle = (callback) =>
   "requestIdleCallback" in window ? requestIdleCallback(callback) : setTimeout(callback, 200);
 const start = () =>
   idle(() => {
+    videos.forEach((video) => (video.poster = `/videos/${video.dataset.video}.webp`));
     ready = true;
     reset();
   });
