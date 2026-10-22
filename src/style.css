@@ -90,6 +90,7 @@
     background: var(--color-paper);
     color: var(--color-ink);
     font: var(--text) / 1.5 var(--font);
+    text-wrap: pretty;
     -webkit-font-smoothing: antialiased;
   }
   ::selection {
