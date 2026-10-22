@@ -4,3 +4,4 @@ node_modules
 public/favicon.svg
 package-lock.json
 src/tokens.css
+videos-src

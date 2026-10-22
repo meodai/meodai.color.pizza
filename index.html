@@ -94,6 +94,74 @@
           >
           · Zürich
         </p>
+        <div class="intro__reel reel" aria-hidden="true">
+          <div class="reel__track">
+            <video
+              class="reel__video"
+              data-video="colornames"
+              muted
+              loop
+              playsinline
+              preload="none"
+            ></video>
+            <video
+              class="reel__video"
+              data-video="poline"
+              muted
+              loop
+              playsinline
+              preload="none"
+            ></video>
+            <video
+              class="reel__video"
+              data-video="rybitten"
+              muted
+              loop
+              playsinline
+              preload="none"
+            ></video>
+            <video
+              class="reel__video"
+              data-video="heerich"
+              muted
+              loop
+              playsinline
+              preload="none"
+            ></video>
+            <video
+              class="reel__video"
+              data-video="charcuterie"
+              muted
+              loop
+              playsinline
+              preload="none"
+            ></video>
+            <video
+              class="reel__video"
+              data-video="okpalette"
+              muted
+              loop
+              playsinline
+              preload="none"
+            ></video>
+            <video
+              class="reel__video"
+              data-video="raycolor"
+              muted
+              loop
+              playsinline
+              preload="none"
+            ></video>
+            <video
+              class="reel__video"
+              data-video="pickypalette"
+              muted
+              loop
+              playsinline
+              preload="none"
+            ></video>
+          </div>
+        </div>
         <nav class="intro__links" aria-label="Social links">
           <a class="intro__link" rel="me" href="https://bsky.app/profile/meodai.color.pizza"
             >Bluesky</a
@@ -138,14 +206,14 @@
           <h2 class="highlights__title title" id="proud">
             Some projects I'm particularly proud of
           </h2>
-          <article class="highlight">
+          <article class="highlight" data-video="colornames">
             <h3 class="highlight__title title">
               <a class="highlight__link" href="https://names.color.pizza/">Color Names</a>
             </h3>
             <p class="highlight__text copy">
               It started because
               <a class="link" href="https://en.wikipedia.org/wiki/Lists_of_colors"
-                >Wikipedia\'s color names</a
+                >Wikipedia's color names</a
               >
               weren't nearly enough for me. Different reds shared the same name, and some of the
               existing names had histories I wasn't comfortable perpetuating. So I started
@@ -157,7 +225,7 @@
               attached.
             </p>
           </article>
-          <article class="highlight">
+          <article class="highlight" data-video="poline">
             <h3 class="highlight__title title">
               <a class="highlight__link" href="https://meodai.github.io/poline/">Poline</a>
             </h3>
@@ -169,7 +237,7 @@
               opening up a whole new creative space.
             </p>
           </article>
-          <article class="highlight">
+          <article class="highlight" data-video="rybitten">
             <h3 class="highlight__title title">
               <a class="highlight__link" href="https://rybitten.space/">RYBitten</a>
             </h3>
@@ -180,20 +248,20 @@
               generative playground, and an ongoing excuse to dig into the history of color.
             </p>
           </article>
-          <article class="highlight">
+          <article class="highlight" data-video="heerich">
             <h3 class="highlight__title title">
               <a class="highlight__link" href="https://meodai.github.io/heerich/">heerich.js</a>
             </h3>
             <p class="highlight__text copy">
               I love
-              <a class="link" href="https://en.wikipedia.org/wiki/Erwin_Heerich">Erwin Heerich</a
-              >\'s work, particularly its clarity, geometry and restrained use of form. It also
-              connects to my longstanding love of pixel art and minimal 3D. I built a tiny engine
-              that translates some of these ideas into plain SVG, so I can keep exploring them in my
-              own work.
+              <a class="link" href="https://en.wikipedia.org/wiki/Erwin_Heerich">Erwin Heerich</a>'s
+              work, particularly its clarity, geometry and restrained use of form. It also connects
+              to my longstanding love of pixel art and minimal 3D. I built a tiny engine that
+              translates some of these ideas into plain SVG, so I can keep exploring them in my own
+              work.
             </p>
           </article>
-          <article class="highlight">
+          <article class="highlight" data-video="charcuterie">
             <h3 class="highlight__title title">
               <a class="highlight__link" href="https://charcuterie.elastiq.ch/">Charcuterie</a>
             </h3>
@@ -205,7 +273,7 @@
               information can make searching more intuitive.
             </p>
           </article>
-          <article class="highlight">
+          <article class="highlight" data-video="okpalette">
             <h3 class="highlight__title title">
               <a class="highlight__link" href="https://okpalette.color.pizza/">OKpalette</a>
             </h3>
@@ -216,7 +284,7 @@
               the conviction that sometimes the best solution is to build your own.
             </p>
           </article>
-          <article class="highlight">
+          <article class="highlight" data-video="raycolor">
             <h3 class="highlight__title title">
               <a class="highlight__link" href="https://meodai.github.io/ray-color/">Ray Color</a>
             </h3>
@@ -228,6 +296,19 @@
               conditions around an object rather than manually choosing individual colors. I love
               the idea of treating a palette as a system that emerges, rather than a collection of
               isolated choices.
+            </p>
+          </article>
+          <article class="highlight" data-video="pickypalette">
+            <h3 class="highlight__title title">
+              <a class="highlight__link" href="https://pickypalette.color.pizza/">PickyPalette</a>
+            </h3>
+            <p class="highlight__text copy">
+              I've always been fascinated by how pixel artists shape their palettes. Creating a
+              palette is as much an art as placing the pixels: when you restrict yourself to a few
+              colors, every one of them counts. Inspired by tools that analyse palettes after the
+              fact, I built a way to sculpt a palette directly on the color model itself. I love the
+              almost tactile feeling of mixing colors and seeing how distinct or close each one is
+              to the rest of the set.
             </p>
           </article>
         </section>
@@ -315,5 +396,6 @@
         </section>
       </main>
     </div>
+    <script type="module" src="/src/reel.js"></script>
   </body>
 </html>
