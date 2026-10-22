@@ -195,20 +195,21 @@
     inset-block-start: 0.875rem;
   }
 
-  /* Links: quiet by default, underlined on hover; in running text a faint
-     underline that turns orange. */
-  .intro__link:hover,
-  .highlight__link:hover {
-    text-decoration: underline;
-    text-underline-offset: 0.25rem;
-  }
+  /* Links: quiet by default, a faint underline in running text; on hover
+     every link gets the same orange underline. */
   .link {
     text-decoration: underline;
     text-decoration-color: var(--rule);
+    text-decoration-thickness: 1px;
     text-underline-offset: 0.1875rem;
   }
-  .link:hover {
+  .link:hover,
+  .intro__link:hover,
+  .highlight__link:hover {
+    text-decoration: underline;
     text-decoration-color: var(--accent);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.1875rem;
   }
 
   /* Titles and body copy. */
