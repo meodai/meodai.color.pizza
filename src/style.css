@@ -18,11 +18,6 @@
 }
 
 @layer reset {
-  *,
-  *::before,
-  *::after {
-    box-sizing: border-box;
-  }
   html {
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
@@ -108,7 +103,7 @@
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     column-gap: var(--gap);
-    max-inline-size: 90.625rem;
+    max-inline-size: calc(90.625rem - 2 * var(--gutter));
     margin-inline: auto;
     padding-inline: var(--gutter);
   }
@@ -117,7 +112,7 @@
     position: sticky;
     inset-block-start: 0;
     align-self: start;
-    block-size: 100svh;
+    block-size: calc(100svh - 2 * var(--shell-top));
     max-inline-size: 22.8125rem;
     padding-block: var(--shell-top);
   }
