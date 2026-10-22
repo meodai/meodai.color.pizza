@@ -1,5 +1,8 @@
 @layer reset, tokens, base, layout, components;
 
+/* Colors come from Design Book: src/tokens.js renders src/tokens.css. */
+@import "./tokens.css" layer(tokens);
+
 /* Libre Caslon Condensed (SIL OFL, see fonts/), subset to Latin plus "→". */
 @font-face {
   font-family: "Libre Caslon Condensed";
@@ -51,13 +54,6 @@
 @layer tokens {
   :root {
     color-scheme: light dark;
-    --paper: #f7f7f7;
-    --ink: #303030;
-    --muted: #707070;
-    --rule: #dedede;
-    --accent: #ff4f2b;
-    /* Text on the accent, readable in both themes (5.5:1 and 7.6:1). */
-    --on-accent: #161616;
 
     --font: "Libre Caslon Condensed", Georgia, serif;
     --text: 1.0625rem;
@@ -70,15 +66,6 @@
     --portrait-width: 5.5rem;
     --portrait-gap: 1.25rem;
     --measure: 23.125rem;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --paper: #161616;
-      --ink: #e8e8e8;
-      --muted: #9a9a9a;
-      --rule: #2e2e2e;
-      --accent: #ff7a5c;
-    }
   }
   @media (max-width: 68.75em) {
     :root {
@@ -102,20 +89,20 @@
 /* Page-wide defaults. */
 @layer base {
   html {
-    scrollbar-color: var(--accent) var(--paper);
+    scrollbar-color: var(--color-accent) var(--color-paper);
   }
   body {
-    background: var(--paper);
-    color: var(--ink);
+    background: var(--color-paper);
+    color: var(--color-ink);
     font: var(--text) / 1.5 var(--font);
     -webkit-font-smoothing: antialiased;
   }
   ::selection {
-    background: var(--accent);
-    color: var(--on-accent);
+    background: var(--color-accent);
+    color: var(--color-on-accent);
   }
   :focus-visible {
-    outline: 2px solid var(--muted);
+    outline: 2px solid var(--color-muted);
     outline-offset: 0.25rem;
   }
 }
@@ -176,7 +163,7 @@
     }
     .shell__content {
       padding-block-start: 2.1875rem;
-      border-block-start: 1px solid var(--rule);
+      border-block-start: 1px solid var(--color-rule);
     }
   }
 }
@@ -189,7 +176,7 @@
     inset-block-start: -5.625rem;
     inset-inline-start: 1.125rem;
     padding: 0.75rem 1.125rem;
-    background: var(--paper);
+    background: var(--color-paper);
   }
   .skip-link:focus {
     inset-block-start: 0.875rem;
@@ -199,7 +186,7 @@
      every link gets the same orange underline. */
   .link {
     text-decoration: underline;
-    text-decoration-color: var(--rule);
+    text-decoration-color: var(--color-rule);
     text-decoration-thickness: 1px;
     text-underline-offset: 0.1875rem;
   }
@@ -207,7 +194,7 @@
   .intro__link:hover,
   .highlight__link:hover {
     text-decoration: underline;
-    text-decoration-color: var(--accent);
+    text-decoration-color: var(--color-accent);
     text-decoration-thickness: 2px;
     text-underline-offset: 0.1875rem;
   }
@@ -233,7 +220,7 @@
     inline-size: 100%;
     block-size: auto;
     fill: none;
-    stroke: var(--ink);
+    stroke: var(--color-ink);
     stroke-width: 1px;
     stroke-linecap: round;
     stroke-linejoin: round;
@@ -242,7 +229,7 @@
     vector-effect: non-scaling-stroke;
   }
   .portrait__pupil {
-    stroke: var(--accent);
+    stroke: var(--color-accent);
   }
 
   /* Intro: portrait, name, role, and the links pushed to the bottom. */
@@ -262,7 +249,7 @@
     font-size: 0.9375rem;
     line-height: 1.4;
     letter-spacing: 0.01em;
-    color: var(--muted);
+    color: var(--color-muted);
   }
   .intro__role {
     margin-block-start: 1.75rem;
@@ -315,7 +302,7 @@
     margin-block-end: 1.5625rem;
   }
   .highlight {
-    border-block-start: 1px solid var(--rule);
+    border-block-start: 1px solid var(--color-rule);
     padding-block: 1.5625rem 1.875rem;
   }
   /* External-link mark: the font's own arrow, turned to point up and out.
@@ -330,7 +317,7 @@
   }
 
   .section {
-    border-block-start: 1px solid var(--rule);
+    border-block-start: 1px solid var(--color-rule);
     padding-block: 1.5625rem 8.125rem;
   }
   /* A section followed by the support block: less space between. */

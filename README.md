@@ -20,7 +20,13 @@ npm run deploy   # build and publish with Wrangler
 
 - `public/.well-known/atproto-did` holds the DID that verifies the Bluesky handle;
   `public/_headers` serves it as plain text.
-- CSS is organised in cascade layers: `reset`, `tokens`, `base`, `layout`, `components`.
+- CSS is organised in cascade layers: `reset`, `tokens`, `base`, `layout`, `components`,
+  with BEM class names.
+- Colors are rules, not hex values: [Design Book](https://github.com/meodai/design-book)
+  turns `src/tokens.js` into `src/tokens.css` on every build (a small Vite plugin). Three
+  primitives (paper, ink, accent) carry each theme; dark mode is a layer that overrides only
+  those, and the rest follows. The muted grey is picked as the one closest to the paper that
+  still reads at 4.5:1, and the selected-text color as the best contrast on the accent.
 - The portrait in `index.html` is a hand-traced SVG line drawing.
 - Titles and text use [Libre Caslon Condensed](https://github.com/ertekinno/libre-caslon-condensed),
   subset to Latin, under the SIL Open Font License (`src/fonts/LibreCaslonCondensed-OFL.txt`).

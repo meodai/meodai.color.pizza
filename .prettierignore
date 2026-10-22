@@ -3,3 +3,4 @@ node_modules
 .wrangler
 public/favicon.svg
 package-lock.json
+src/tokens.css
