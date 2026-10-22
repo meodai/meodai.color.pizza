@@ -1,13 +1,17 @@
 const reel = document.querySelector(".reel");
 const track = reel.querySelector(".reel__track");
 const videos = [...reel.querySelectorAll(".reel__video")];
+const highlights = [...document.querySelectorAll(".highlight")];
 const intro = reel.closest(".intro");
-const wide = matchMedia(
-  "(min-width: 48.8125em) and (min-height: 45.0625em) and (prefers-reduced-motion: no-preference)",
-);
+const home = reel.parentElement;
+const homeNext = reel.nextElementSibling;
+const motion = "(prefers-reduced-motion: no-preference)";
+const wide = matchMedia(`(min-width: 48.8125em) and (min-height: 45.0625em) and ${motion}`);
+const tablet = matchMedia(`(max-width: 48.75em) and ${motion}`);
 
 let ready = false;
 let hovered = null;
+let inView = null;
 let pointer = null;
 
 track.style.setProperty("--reel-count", videos.length);
@@ -32,11 +36,7 @@ function place() {
   reel.style.setProperty("--reel-shift", `${clamped - natural}px`);
 }
 
-function update() {
-  const index =
-    ready && wide.matches
-      ? videos.findIndex((v) => v.dataset.video === hovered?.dataset.video)
-      : -1;
+function show(index) {
   reel.classList.toggle("reel--visible", index >= 0);
   if (index >= 0) track.style.setProperty("--reel-index", index);
   videos.forEach((video, i) => {
@@ -44,6 +44,31 @@ function update() {
     load(video);
     video.play().catch(() => {});
   });
+}
+
+function update() {
+  const focus = tablet.matches ? inView : hovered;
+  const index =
+    ready && (wide.matches || tablet.matches)
+      ? videos.findIndex((v) => v.dataset.video === focus?.dataset.video)
+      : -1;
+  const slot = tablet.matches ? focus?.querySelector(".highlight__media") : home;
+  if (index < 0 || !slot || reel.parentElement === slot) return show(index);
+  reel.classList.remove("reel--visible");
+  reel.style.removeProperty("--reel-shift");
+  slot.insertBefore(reel, slot === home ? homeNext : null);
+  void track.offsetHeight;
+  place();
+  show(index);
+}
+
+function focusFromScroll() {
+  const line = innerHeight / 2;
+  inView =
+    highlights.find((highlight) => {
+      const { top, bottom } = highlight.getBoundingClientRect();
+      return top <= line && bottom > line;
+    }) ?? null;
 }
 
 function hover(target) {
@@ -57,6 +82,7 @@ function hover(target) {
 addEventListener(
   "pointermove",
   (event) => {
+    if (event.pointerType !== "mouse") return;
     pointer = event;
     hover(event.target);
   },
@@ -71,6 +97,12 @@ document.documentElement.addEventListener("pointerleave", () => {
 addEventListener(
   "scroll",
   () => {
+    if (tablet.matches) {
+      const previous = inView;
+      focusFromScroll();
+      if (inView !== previous) update();
+      return;
+    }
     if (!pointer) return;
     hover(document.elementFromPoint(pointer.clientX, pointer.clientY));
     place();
@@ -78,14 +110,19 @@ addEventListener(
   { passive: true },
 );
 
-wide.addEventListener("change", update);
+const reset = () => {
+  focusFromScroll();
+  update();
+};
+wide.addEventListener("change", reset);
+tablet.addEventListener("change", reset);
 
 const idle = (callback) =>
   "requestIdleCallback" in window ? requestIdleCallback(callback) : setTimeout(callback, 200);
 const start = () =>
   idle(() => {
     ready = true;
-    update();
+    reset();
   });
 if (document.readyState === "complete") start();
 else addEventListener("load", start, { once: true });
