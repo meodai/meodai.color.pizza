@@ -271,6 +271,9 @@
   .highlight__media {
     display: none;
   }
+  .highlight__video {
+    display: none;
+  }
   @media (max-width: 48.75em), (max-height: 45em) {
     .intro .reel {
       display: none;
@@ -414,6 +417,11 @@
   @media (max-width: 33.75em) {
     .highlight__media {
       margin-block: 0.5rem;
+    }
+    .highlight__video {
+      display: block;
+      grid-area: 1 / 1;
+      border: 1px solid var(--color-rule);
     }
   }
 }

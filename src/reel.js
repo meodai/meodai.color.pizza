@@ -8,11 +8,14 @@ const homeNext = reel.nextElementSibling;
 const motion = "(prefers-reduced-motion: no-preference)";
 const wide = matchMedia(`(min-width: 48.8125em) and (min-height: 45.0625em) and ${motion}`);
 const tablet = matchMedia(`(max-width: 48.75em) and ${motion}`);
+const phone = matchMedia("(max-width: 33.75em)");
+const moving = matchMedia(motion);
 
 let ready = false;
 let hovered = null;
 let inView = null;
 let pointer = null;
+let inline = [];
 
 track.style.setProperty("--reel-count", videos.length);
 
@@ -36,17 +39,40 @@ function place() {
   reel.style.setProperty("--reel-shift", `${clamped - natural}px`);
 }
 
-function show(index) {
-  reel.classList.toggle("reel--visible", index >= 0);
-  if (index >= 0) track.style.setProperty("--reel-index", index);
-  videos.forEach((video, i) => {
+function play(list, index) {
+  list.forEach((video, i) => {
     if (i !== index) return video.pause();
     load(video);
     video.play().catch(() => {});
   });
 }
 
+function show(index) {
+  reel.classList.toggle("reel--visible", index >= 0);
+  if (index >= 0) track.style.setProperty("--reel-index", index);
+  play(videos, index);
+}
+
+function inlineVideos() {
+  if (!inline.length) {
+    inline = highlights.map((highlight) => {
+      const video = videos.find((v) => v.dataset.video === highlight.dataset.video).cloneNode();
+      video.classList.add("highlight__video");
+      video.muted = true;
+      highlight.querySelector(".highlight__media").append(video);
+      return video;
+    });
+  }
+  return inline;
+}
+
 function update() {
+  if (ready && phone.matches) {
+    if (reel.parentElement !== home) home.insertBefore(reel, homeNext);
+    show(-1);
+    return play(inlineVideos(), moving.matches ? highlights.indexOf(inView) : -1);
+  }
+  play(inline, -1);
   const focus = tablet.matches ? inView : hovered;
   const index =
     ready && (wide.matches || tablet.matches)
@@ -116,6 +142,7 @@ const reset = () => {
 };
 wide.addEventListener("change", reset);
 tablet.addEventListener("change", reset);
+phone.addEventListener("change", reset);
 
 const idle = (callback) =>
   "requestIdleCallback" in window ? requestIdleCallback(callback) : setTimeout(callback, 200);
