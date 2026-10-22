@@ -52,14 +52,20 @@ export function books() {
   return { light: composeBook("light", [system]), night: composeBook("dark", [system, dark]) };
 }
 
+export function themeColors() {
+  const { light, night } = books();
+  return { light: light.resolve("color.paper"), dark: night.resolve("color.paper") };
+}
+
 export function tokensCSS() {
   const { light, night } = books();
-  const indent = (css) => css.replace(/^/gm, "  ");
+  const declarations = (book, options) =>
+    Object.entries(JSON.parse(book.render("json", { scopes: ["color"], ...options })))
+      .map(([key, value]) => `--${key.replace(".", "-")}: ${value};`)
+      .join(" ");
   return [
-    light.render("css-variables").trim(),
-    "@media (prefers-color-scheme: dark) {",
-    indent(night.render("css-variables", { changedFrom: light }).trim()),
-    "}",
+    `:root { ${declarations(light)} }`,
+    `@media (prefers-color-scheme: dark) { :root { ${declarations(night, { changedFrom: light })} } }`,
     "",
   ].join("\n");
 }

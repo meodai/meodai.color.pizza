@@ -23,7 +23,7 @@ npm run deploy   # build and publish with Wrangler
 - CSS is organised in cascade layers: `reset`, `tokens`, `base`, `layout`, `components`,
   with BEM class names.
 - Colors are rules, not hex values: [Design Book](https://github.com/meodai/design-book)
-  turns `src/tokens.js` into `src/tokens.css` on every build (a small Vite plugin). Three
+  resolves `src/tokens.js` into plain hex values in `src/tokens.css` on every build (a small Vite plugin, which also fills in the `theme-color` tags). Three
   primitives (paper, ink, accent) carry each theme; dark mode is a layer that overrides only
   those, and the rest follows. Every neutral comes from one six-step ramp from paper to ink:
   hairlines are the step next to the paper, muted text the step closest to the paper that
