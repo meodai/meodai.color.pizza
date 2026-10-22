@@ -25,8 +25,9 @@ npm run deploy   # build and publish with Wrangler
 - Colors are rules, not hex values: [Design Book](https://github.com/meodai/design-book)
   turns `src/tokens.js` into `src/tokens.css` on every build (a small Vite plugin). Three
   primitives (paper, ink, accent) carry each theme; dark mode is a layer that overrides only
-  those, and the rest follows. The muted grey is picked as the one closest to the paper that
-  still reads at 4.5:1, and the selected-text color as the best contrast on the accent.
+  those, and the rest follows. Every neutral comes from one six-step ramp from paper to ink:
+  hairlines are the step next to the paper, muted text the step closest to the paper that
+  still reads at 4.5:1, and ink and selected text the steps with the best contrast.
 - The crayon in the corner opens a panel that runs the same rules in the browser
   (`src/recolor.js`): visitors pick the three primitives and Design Book re-derives the rest.
   It is loaded only when the panel opens, so the page itself stays almost script-free.

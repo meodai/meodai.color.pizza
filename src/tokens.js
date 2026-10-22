@@ -5,34 +5,39 @@ import {
   colorMix,
   composeBook,
   layer,
+  nth,
   ref,
 } from "design-book";
+
+const steps = 6;
 
 const system = layer("system", (book) => {
   const base = book.addScope("base");
   base.set("paper", color("#f7f7f7"));
   base.set("ink", color("#303030"));
   base.set("accent", color("#ff4f2b"));
-  base.set("night", color("#161616"));
 
-  const grey = book.addScope("grey");
-  for (let step = 1; step <= 9; step++) {
-    grey.set(
-      `g${step}0`,
-      colorMix(ref("base.ink"), ref("base.paper"), { ratio: step / 10, colorSpace: "oklch" }),
+  const tone = book.addScope("tone");
+  for (let step = 0; step < steps; step++) {
+    tone.set(
+      `t${step}`,
+      colorMix(ref("base.paper"), ref("base.ink"), {
+        ratio: Math.round((step / (steps - 1)) ** 1.6 * 100) / 100,
+        colorSpace: "oklch",
+      }),
     );
   }
 
   const ui = book.addScope("color");
-  ui.set("paper", ref("base.paper"));
-  ui.set("ink", ref("base.ink"));
+  ui.set("paper", nth(tone, 0));
+  ui.set("ink", bestContrastWith(ref("color.paper"), tone));
   ui.set("accent", ref("base.accent"));
   ui.set(
     "muted",
-    closestColor(ref("base.paper"), grey, { readableOn: ref("base.paper"), minContrast: 4.5 }),
+    closestColor(ref("color.paper"), tone, { readableOn: ref("color.paper"), minContrast: 4.5 }),
   );
-  ui.set("rule", colorMix(ref("base.paper"), ref("base.ink"), { ratio: 0.1, colorSpace: "oklch" }));
-  ui.set("on-accent", bestContrastWith(ref("base.accent"), base, { not: [ref("base.accent")] }));
+  ui.set("rule", nth(tone, 1));
+  ui.set("on-accent", bestContrastWith(ref("color.accent"), tone));
 });
 
 const dark = layer("dark", {
