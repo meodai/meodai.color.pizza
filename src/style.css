@@ -261,6 +261,7 @@
 
   .opening {
     min-block-size: 25.625rem;
+    margin-block-end: 5rem;
   }
   .opening__aside {
     font-size: 1rem;
