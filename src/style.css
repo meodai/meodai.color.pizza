@@ -249,7 +249,10 @@
     aspect-ratio: 720 / 446;
     border: 1px solid var(--color-rule);
     opacity: 0;
-    transition: opacity 0.4s;
+    translate: 0 var(--reel-shift, 0);
+    transition:
+      opacity 0.2s,
+      translate 0.6s cubic-bezier(0.3, 0.7, 0, 1);
   }
   .reel--visible {
     opacity: 1;

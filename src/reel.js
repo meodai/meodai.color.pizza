@@ -1,6 +1,7 @@
 const reel = document.querySelector(".reel");
 const track = reel.querySelector(".reel__track");
 const videos = [...reel.querySelectorAll(".reel__video")];
+const intro = reel.closest(".intro");
 const wide = matchMedia(
   "(min-width: 48.8125em) and (min-height: 45.0625em) and (prefers-reduced-motion: no-preference)",
 );
@@ -22,6 +23,15 @@ function load(video) {
   video.load();
 }
 
+function place() {
+  if (!hovered || !wide.matches) return;
+  const natural = intro.getBoundingClientRect().top + reel.offsetTop;
+  const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+  const top = hovered.querySelector(".highlight__text").getBoundingClientRect().top;
+  const clamped = Math.min(Math.max(top, rem), innerHeight - rem - reel.offsetHeight);
+  reel.style.setProperty("--reel-shift", `${clamped - natural}px`);
+}
+
 function update() {
   const index =
     ready && wide.matches
@@ -40,6 +50,7 @@ function hover(target) {
   const highlight = target?.closest?.(".highlight") ?? null;
   if (highlight === hovered) return;
   hovered = highlight;
+  place();
   update();
 }
 
@@ -59,7 +70,11 @@ document.documentElement.addEventListener("pointerleave", () => {
 
 addEventListener(
   "scroll",
-  () => pointer && hover(document.elementFromPoint(pointer.clientX, pointer.clientY)),
+  () => {
+    if (!pointer) return;
+    hover(document.elementFromPoint(pointer.clientX, pointer.clientY));
+    place();
+  },
   { passive: true },
 );
 
