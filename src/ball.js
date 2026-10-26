@@ -597,11 +597,18 @@ function wake() {
 }
 
 function focused() {
-  if (!hovering.matches || !pointer) return null;
-  return document
-    .elementsFromPoint(...pointer)
-    .map((element) => element.closest(".highlight"))
-    .find(Boolean);
+  if (hovering.matches) {
+    if (!pointer) return null;
+    return document
+      .elementsFromPoint(...pointer)
+      .map((element) => element.closest(".highlight"))
+      .find(Boolean);
+  }
+  const line = innerHeight / 2;
+  return [...document.querySelectorAll(".highlight")].find((highlight) => {
+    const { top, bottom } = highlight.getBoundingClientRect();
+    return top <= line && bottom > line;
+  });
 }
 
 function corner(highlight = null) {
