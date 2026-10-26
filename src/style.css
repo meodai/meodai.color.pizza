@@ -441,11 +441,6 @@
     inline-size: 3rem;
     block-size: 3rem;
     pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.3s;
-  }
-  .ball__sphere--visible {
-    opacity: 1;
   }
   .ball__dock {
     position: fixed;
@@ -481,10 +476,6 @@
     border-radius: 50%;
     background: radial-gradient(closest-side, rgb(0 0 0 / 0.28), rgb(0 0 0 / 0));
     pointer-events: none;
-    visibility: hidden;
-  }
-  .ball__shadow--visible {
-    visibility: visible;
   }
   .ball__handle {
     position: fixed;

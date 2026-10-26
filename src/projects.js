@@ -1,7 +1,3 @@
-// Projects, newest first. `story` is HTML, told in first person.
-// Not on the page yet and not rendered by anything: a parked draft for a
-// fuller project list. Most stories are drafts based on the READMEs.
-
 export const intro = `Most of these started as little experiments on <a href="https://codepen.io/meodai">CodePen</a> that got out of hand. Some I make and then leave alone. Many I keep working on for years, because a newer project gives me ideas for an older one.`;
 
 export default [

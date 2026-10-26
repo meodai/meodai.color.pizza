@@ -590,13 +590,6 @@ function wake() {
   frame = requestAnimationFrame(step);
 }
 
-function appear(x, y) {
-  if (position) return;
-  position = [x, y + scrollY];
-  sphere.classList.add("ball__sphere--visible");
-  shadow.classList.add("ball__shadow--visible");
-}
-
 function focused() {
   if (hovering.matches) {
     if (!pointer) return null;
@@ -658,7 +651,6 @@ function follow(event) {
     return;
   }
   target = [event.clientX, event.clientY];
-  appear(...target);
   wake();
 }
 
@@ -670,7 +662,6 @@ function touch(event) {
   }
   const { clientX, clientY } = event.touches[0];
   target = [clientX, clientY];
-  appear(clientX, clientY);
   wake();
 }
 
@@ -684,7 +675,6 @@ function orient({ beta, gamma }) {
   const sin = Math.sin(turned);
   tilt = [x * cos + y * sin, y * cos - x * sin].map((v) => (Math.abs(v) < 0.03 ? 0 : v));
   target = null;
-  appear(innerWidth / 2, innerHeight / 2);
   wake();
 }
 
@@ -699,7 +689,9 @@ function start() {
   buildRamp();
   buildLabel();
   const [x, y] = corner();
-  appear(x, y);
+  position = [x, y + scrollY];
+  paintSphere();
+  place();
   wake();
   handle.addEventListener("click", release);
   handle.addEventListener("pointerenter", (event) => {
