@@ -424,4 +424,79 @@
       border: 1px solid var(--color-rule);
     }
   }
+
+  .ball__trail {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    inline-size: 100vw;
+    block-size: 100vh;
+    pointer-events: none;
+  }
+  .ball__sphere {
+    position: fixed;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    z-index: 80;
+    inline-size: 3rem;
+    block-size: 3rem;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .ball__sphere--visible {
+    opacity: 1;
+  }
+  .ball__dock {
+    position: fixed;
+    inset-block-end: 2.55rem;
+    inset-inline-end: 2.55rem;
+    z-index: 78;
+    inline-size: calc(2.4rem - 2px);
+    block-size: calc(2.4rem - 2px);
+    border: 1px solid var(--color-ink);
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .ball__dock--visible {
+    opacity: 1;
+  }
+  @media (max-width: 48.75em) {
+    .ball__dock {
+      inset-inline: 0.675rem auto;
+    }
+    body:has(.ball__sphere) .shell {
+      padding-inline-start: 4rem;
+    }
+  }
+  .ball__shadow {
+    position: fixed;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    z-index: 79;
+    inline-size: 3.45rem;
+    block-size: 3.45rem;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgb(0 0 0 / 0.28), rgb(0 0 0 / 0));
+    pointer-events: none;
+    visibility: hidden;
+  }
+  .ball__shadow--visible {
+    visibility: visible;
+  }
+  .ball__handle {
+    position: fixed;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    z-index: 81;
+    inline-size: 3rem;
+    block-size: 3rem;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    cursor: pointer;
+  }
 }
