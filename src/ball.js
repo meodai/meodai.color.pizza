@@ -712,6 +712,9 @@ function start() {
   addEventListener("touchstart", touch, { passive: true });
   addEventListener("touchmove", touch, { passive: true });
   addEventListener("scroll", () => position && wake(), { passive: true });
+  addEventListener("load", wake);
+  document.fonts.ready.then(wake);
+  new ResizeObserver(() => wake()).observe(document.body);
   addEventListener("resize", () => {
     resize();
     wake();
