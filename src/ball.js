@@ -94,11 +94,15 @@ function toGamma(v) {
 }
 
 function readColor(color) {
-  const probe = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
-  probe.fillStyle = color;
-  probe.fillRect(0, 0, 1, 1);
-  const [r, g, b] = probe.getImageData(0, 0, 1, 1).data;
-  return [r, g, b].map((v) => toLinear(v / 255));
+  const probe = document.createElement("i");
+  probe.style.color = color;
+  document.body.append(probe);
+  const channels = getComputedStyle(probe)
+    .color.match(/[\d.]+/g)
+    .slice(0, 3)
+    .map(Number);
+  probe.remove();
+  return channels.map((v) => toLinear(v / 255));
 }
 
 async function buildLabel() {
@@ -246,6 +250,8 @@ function resize() {
   radius = sphere.offsetWidth / 2;
   trail.width = innerWidth * pixelRatio;
   trail.height = innerHeight * pixelRatio;
+  trail.style.width = `${innerWidth}px`;
+  trail.style.height = `${innerHeight}px`;
   const size = Math.ceil(radius * 2 * pixelRatio);
   sphere.width = sphere.height = size;
   image = sphereContext.createImageData(size, size);
@@ -591,18 +597,11 @@ function wake() {
 }
 
 function focused() {
-  if (hovering.matches) {
-    if (!pointer) return null;
-    return document
-      .elementsFromPoint(...pointer)
-      .map((element) => element.closest(".highlight"))
-      .find(Boolean);
-  }
-  const line = innerHeight / 2;
-  return [...document.querySelectorAll(".highlight")].find((highlight) => {
-    const { top, bottom } = highlight.getBoundingClientRect();
-    return top <= line && bottom > line;
-  });
+  if (!hovering.matches || !pointer) return null;
+  return document
+    .elementsFromPoint(...pointer)
+    .map((element) => element.closest(".highlight"))
+    .find(Boolean);
 }
 
 function corner(highlight = null) {
