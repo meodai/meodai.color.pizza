@@ -241,6 +241,7 @@ let iconStale = false;
 let tilt = null;
 let level = null;
 let last = 0;
+let lastScroll = 0;
 let frame = 0;
 
 function normalize([x, y, z]) {
@@ -615,15 +616,15 @@ function stamp(count, x, y, size, [px, py, pz], fade, color) {
   return count + 1;
 }
 
-function press(now) {
-  const speed = Math.hypot(...velocity);
+function press(now, ground) {
+  const speed = Math.hypot(...ground);
   if (!label || speed < 1) return;
   const orient = axes();
   if (orient[8] < 0) return;
   prints.push({
     x: position[0],
     y: position[1],
-    direction: [velocity[0] / speed, velocity[1] / speed],
+    direction: [ground[0] / speed, ground[1] / speed],
     along: Math.min(Math.max(1.5, speed / 60), 6) / 2 + 0.4,
     orient,
     color: ink,
@@ -748,6 +749,11 @@ function paintTrail(now) {
 function step(now) {
   const dt = Math.min((now - last) / 1000, 1 / 30);
   last = now;
+  const shift = scrollY - lastScroll;
+  lastScroll = scrollY;
+  const jumped = parked && Math.abs(shift) > innerHeight / 2;
+  const carried = parked && !jumped && dt > 0 ? shift / dt : 0;
+  if (parked) position = [position[0], position[1] + shift];
 
   if (parked) target = corner(focused());
   else homing();
@@ -762,7 +768,7 @@ function step(now) {
       : STIFFNESS * (ty - position[1]) - DAMPING * velocity[1];
     velocity = [velocity[0] + ax * dt, velocity[1] + ay * dt];
     turn(ax, ay, now);
-    spinning = [velocity[1] / radius, -velocity[0] / radius, 0];
+    spinning = [(velocity[1] + carried) / radius, -velocity[0] / radius, 0];
   } else {
     lift -= GRAVITY * dt;
     height += lift * dt;
@@ -774,10 +780,11 @@ function step(now) {
   if (tilt) bounce(now);
   rotation = spin(rotation, spinning, dt);
 
-  const speed = Math.hypot(...velocity);
+  const ground = [velocity[0], velocity[1] + carried];
+  const speed = Math.hypot(...ground);
   const previous = points.at(-1);
   if (height === 0) {
-    const gap = !grounded || !previous || previous.lifted;
+    const gap = jumped || !grounded || !previous || previous.lifted;
     const goal = radius * (THIN + (WIDE - THIN) * Math.exp(-speed / 200));
     if (gap) stroke = radius * THIN;
     const ease = goal > stroke ? SWELL : NARROW;
@@ -786,7 +793,7 @@ function step(now) {
     if (gap || Math.hypot(position[0] - previous.x, position[1] - previous.y) > 1.5) {
       const pole = rotate(rotation, [0, 0, -1]);
       points.push({ x: position[0], y: position[1], width, pole, gap, color: ink, time: now });
-      press(now);
+      press(now, ground);
     } else {
       previous.width = width;
       previous.time = now;
@@ -1022,8 +1029,9 @@ function start() {
   setupBall();
   setupFloor();
   buildLabel();
-  const [x, y] = corner();
+  const [x, y] = corner(focused());
   position = [x, y + scrollY];
+  lastScroll = scrollY;
   paintSphere();
   place();
   wake();
