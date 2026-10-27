@@ -104,17 +104,20 @@ const STROKE_VERTEX = `#version 300 es
   in float size;
   in vec2 facing;
   in float cut;
+  in vec3 tint;
   uniform float ratio;
   out vec2 local;
   flat out float vSize;
   flat out vec2 vFacing;
   flat out float vCut;
+  flat out vec3 vTint;
   ${CLIP}
   void main() {
     local = corner * (size + 1.0 / ratio);
     vSize = size;
     vFacing = facing;
     vCut = cut;
+    vTint = tint;
     gl_Position = toClip(center + local);
   }`;
 const STROKE_FRAGMENT = `#version 300 es
@@ -123,14 +126,14 @@ const STROKE_FRAGMENT = `#version 300 es
   flat in float vSize;
   flat in vec2 vFacing;
   flat in float vCut;
+  flat in vec3 vTint;
   out vec4 color;
   uniform float ratio;
-  uniform vec3 tint;
   void main() {
     float a = clamp((vSize - length(local)) * ratio + 0.5, 0.0, 1.0) *
       clamp((dot(local, vFacing) - vCut) * ratio + 0.5, 0.0, 1.0);
     if (a <= 0.0) discard;
-    color = vec4(tint * a, a);
+    color = vec4(vTint * a, a);
   }`;
 const SPRITE_VERTEX = `#version 300 es
   in vec2 corner;
@@ -159,16 +162,19 @@ const PRINT_VERTEX = `#version 300 es
   in vec3 axisX;
   in vec3 axisY;
   in vec3 axisZ;
+  in vec3 tint;
   uniform float across;
   out vec2 ground;
   flat out float vFade;
   flat out vec3 vX;
   flat out vec3 vY;
   flat out vec3 vZ;
+  flat out vec3 vTint;
   ${CLIP}
   void main() {
     ground = direction * corner.x * along + vec2(-direction.y, direction.x) * corner.y * across;
     vFade = fade;
+    vTint = tint;
     vX = axisX;
     vY = axisY;
     vZ = axisZ;
@@ -181,28 +187,33 @@ const PRINT_FRAGMENT = `#version 300 es
   flat in vec3 vX;
   flat in vec3 vY;
   flat in vec3 vZ;
+  flat in vec3 vTint;
   out vec4 color;
   uniform float radius;
-  uniform vec3 tint;
   ${LETTER}
   void main() {
     vec2 at = ground / radius;
     float a = letter(normalize(vX * at.x + vY * at.y + vZ)) * vFade;
     if (a <= 0.0) discard;
-    color = vec4(tint * a, a);
+    color = vec4(vTint * a, a);
   }`;
 
 let radius = 0;
 let pixelRatio = 1;
 let label = null;
+let base = [0, 0, 0];
+let accent = [1, 0, 0];
+let tone = 0;
 let paint = [0, 0, 0];
 let paper = [1, 1, 1];
 let ink = [0, 0, 0];
 let drawn = null;
 let ball = null;
 let floor = null;
-let strokeData = new Float32Array(6 * 4096);
-let printData = new Float32Array(15 * 1024);
+const STROKE_SIZE = 9;
+const PRINT_SIZE = 18;
+let strokeData = new Float32Array(STROKE_SIZE * 4096);
+let printData = new Float32Array(PRINT_SIZE * 1024);
 let position = null;
 let velocity = [0, 0];
 let height = 0;
@@ -273,9 +284,25 @@ async function buildLabel() {
 
 function buildColors() {
   paper = readColor(getComputedStyle(document.body).backgroundColor);
-  paint = readColor(getComputedStyle(document.documentElement).getPropertyValue("--color-ink"));
-  ink = paint.map(toGamma);
+  const root = getComputedStyle(document.documentElement);
+  base = readColor(root.getPropertyValue("--color-ink"));
+  accent = readColor(root.getPropertyValue("--color-accent"));
+  mixPaint();
   drawn = null;
+}
+
+function mixPaint() {
+  paint = base.map((v, i) => v + (accent[i] - v) * tone);
+  ink = paint.map(toGamma);
+}
+
+function blend(dt) {
+  const root = document.documentElement;
+  const goal = scrollY + innerHeight >= root.scrollHeight - 2 ? 1 : 0;
+  if (tone === goal) return true;
+  tone = Math.abs(goal - tone) < 0.01 ? goal : tone + (goal - tone) * (1 - Math.exp(-dt / 0.15));
+  mixPaint();
+  return false;
 }
 
 function compile(gl, vertex, fragment, names) {
@@ -371,30 +398,20 @@ function setupFloor() {
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
   floor = {
-    strokes: shape(
-      gl,
-      compile(gl, STROKE_VERTEX, STROKE_FRAGMENT, ["view", "scroll", "ratio", "tint"]),
-      [
-        ["center", 2],
-        ["size", 1],
-        ["facing", 2],
-        ["cut", 1],
-      ],
-    ),
+    strokes: shape(gl, compile(gl, STROKE_VERTEX, STROKE_FRAGMENT, ["view", "scroll", "ratio"]), [
+      ["center", 2],
+      ["size", 1],
+      ["facing", 2],
+      ["cut", 1],
+      ["tint", 3],
+    ]),
     sprites: shape(
       gl,
       compile(gl, SPRITE_VERTEX, SPRITE_FRAGMENT, ["view", "scroll", "rect", "sprite", "alpha"]),
     ),
     prints: shape(
       gl,
-      compile(gl, PRINT_VERTEX, PRINT_FRAGMENT, [
-        "view",
-        "scroll",
-        "across",
-        "radius",
-        "tint",
-        "label",
-      ]),
+      compile(gl, PRINT_VERTEX, PRINT_FRAGMENT, ["view", "scroll", "across", "radius", "label"]),
       [
         ["center", 2],
         ["direction", 2],
@@ -403,6 +420,7 @@ function setupFloor() {
         ["axisX", 3],
         ["axisY", 3],
         ["axisZ", 3],
+        ["tint", 3],
       ],
     ),
     label: texture(gl, label),
@@ -520,7 +538,7 @@ function axes() {
 }
 
 function paintSphere() {
-  const key = `${rotation.join()},${height},${lamp.join()}`;
+  const key = `${rotation.join()},${height},${lamp.join()},${tone}`;
   if (key === drawn || sphereGl.isContextLost()) return;
   drawn = key;
   const gl = sphereGl;
@@ -551,22 +569,25 @@ function place() {
   shadow.style.scale = 1 + (height * 0.25) / reach;
   shadow.style.opacity = 1 / (1 + height / 70);
   handle.style.translate = `${x - radius}px ${y - radius}px`;
+  const [dockX, dockY] = corner();
+  const dockRadius = dock.offsetWidth / 2;
+  dock.style.translate = `${dockX - dockRadius}px ${dockY - dockRadius}px`;
 }
 
-function stamp(count, x, y, size, [px, py, pz], fade) {
+function stamp(count, x, y, size, [px, py, pz], fade, color) {
   const reach = Math.hypot(px, py);
   const cut =
     reach < 1e-6 ? -Math.sign(pz - EDGE) * Infinity : (radius * fade * (EDGE - pz)) / reach;
   if (cut >= size) return count;
-  if (strokeData.length < (count + 1) * 6) {
+  if (strokeData.length < (count + 1) * STROKE_SIZE) {
     const grown = new Float32Array(strokeData.length * 2);
     grown.set(strokeData);
     strokeData = grown;
   }
   const whole = cut <= -size;
   strokeData.set(
-    [x, y, size, whole ? 0 : px / reach, whole ? 0 : py / reach, whole ? -1e6 : cut],
-    count * 6,
+    [x, y, size, whole ? 0 : px / reach, whole ? 0 : py / reach, whole ? -1e6 : cut, ...color],
+    count * STROKE_SIZE,
   );
   return count + 1;
 }
@@ -582,6 +603,7 @@ function press(now) {
     direction: [velocity[0] / speed, velocity[1] / speed],
     along: Math.min(Math.max(1.5, speed / 60), 6) / 2 + 0.4,
     orient,
+    color: ink,
     time: now,
   });
 }
@@ -637,6 +659,7 @@ function paintTrail(now) {
         (mix(from.width, b.width) / 2) * fade,
         [mix(from.pole[0], b.pole[0]), mix(from.pole[1], b.pole[1]), mix(from.pole[2], b.pole[2])],
         fade,
+        b.color,
       );
     }
   }
@@ -645,11 +668,10 @@ function paintTrail(now) {
     gl.useProgram(program);
     gl.bindVertexArray(vao);
     gl.bindBuffer(gl.ARRAY_BUFFER, instances);
-    gl.bufferData(gl.ARRAY_BUFFER, strokeData.subarray(0, count * 6), gl.STREAM_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, strokeData.subarray(0, count * STROKE_SIZE), gl.STREAM_DRAW);
     gl.uniform2f(uniforms.view, innerWidth, innerHeight);
     gl.uniform1f(uniforms.scroll, scrollY);
     gl.uniform1f(uniforms.ratio, pixelRatio);
-    gl.uniform3fv(uniforms.tint, ink);
     gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, count);
   }
   const visible = splashes.filter(({ y, size }) => y + size / 2 >= top && y - size / 2 <= bottom);
@@ -670,22 +692,28 @@ function paintTrail(now) {
   }
   const pressed = prints.filter(({ y }) => y >= top && y <= bottom);
   if (pressed.length) {
-    if (printData.length < pressed.length * 15) {
-      printData = new Float32Array(pressed.length * 30);
+    if (printData.length < pressed.length * PRINT_SIZE) {
+      printData = new Float32Array(pressed.length * PRINT_SIZE * 2);
     }
-    pressed.forEach(({ x, y, direction, along, orient, time }, i) => {
-      printData.set([x, y, ...direction, along, 1 - (now - time) / TRAIL_LIFE, ...orient], i * 15);
+    pressed.forEach(({ x, y, direction, along, orient, color, time }, i) => {
+      printData.set(
+        [x, y, ...direction, along, 1 - (now - time) / TRAIL_LIFE, ...orient, ...color],
+        i * PRINT_SIZE,
+      );
     });
     const { program, uniforms, vao, instances } = floor.prints;
     gl.useProgram(program);
     gl.bindVertexArray(vao);
     gl.bindBuffer(gl.ARRAY_BUFFER, instances);
-    gl.bufferData(gl.ARRAY_BUFFER, printData.subarray(0, pressed.length * 15), gl.STREAM_DRAW);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      printData.subarray(0, pressed.length * PRINT_SIZE),
+      gl.STREAM_DRAW,
+    );
     gl.uniform2f(uniforms.view, innerWidth, innerHeight);
     gl.uniform1f(uniforms.scroll, scrollY);
     gl.uniform1f(uniforms.across, radius * 0.9);
     gl.uniform1f(uniforms.radius, radius);
-    gl.uniform3fv(uniforms.tint, ink);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, floor.label);
     gl.uniform1i(uniforms.label, 0);
@@ -733,7 +761,7 @@ function step(now) {
     const width = stroke;
     if (gap || Math.hypot(position[0] - previous.x, position[1] - previous.y) > 1.5) {
       const pole = rotate(rotation, [0, 0, -1]);
-      points.push({ x: position[0], y: position[1], width, pole, gap, time: now });
+      points.push({ x: position[0], y: position[1], width, pole, gap, color: ink, time: now });
       press(now);
     } else {
       previous.width = width;
@@ -751,12 +779,17 @@ function step(now) {
   prints = prints.filter((print) => now - print.time < TRAIL_LIFE);
 
   const lit = aim(dt);
+  const toned = blend(dt);
   paintTrail(now);
   paintSphere();
   place();
 
   const resting =
-    lit && height === 0 && speed < 0.5 && Math.hypot(tx - position[0], ty - position[1]) < 0.5;
+    lit &&
+    toned &&
+    height === 0 &&
+    speed < 0.5 &&
+    Math.hypot(tx - position[0], ty - position[1]) < 0.5;
   paintIcon(now, resting);
   frame =
     resting && !points.length && !splashes.length && !prints.length
@@ -862,12 +895,27 @@ function focused() {
   });
 }
 
+function groove() {
+  const intro = document.querySelector(".shell__intro")?.getBoundingClientRect();
+  const content = document.querySelector(".shell__content")?.getBoundingClientRect();
+  if (!intro || !content || content.left - intro.right < radius * 2) return null;
+  return intro.right;
+}
+
 function corner(highlight = null) {
   const inset = radius * 2.5;
-  const x = narrow.matches ? radius * 1.25 : document.documentElement.clientWidth - inset;
-  if (!highlight) return [x, innerHeight - inset];
-  const { top, bottom } = highlight.getBoundingClientRect();
-  return [x, Math.min(Math.max((top + bottom) / 2, inset), innerHeight - inset)];
+  const floor = innerHeight - inset;
+  const lane = narrow.matches ? null : groove();
+  const x = narrow.matches ? radius * 1.25 : (lane ?? document.documentElement.clientWidth - inset);
+  if (highlight) {
+    const { top, bottom } = highlight.getBoundingClientRect();
+    return [x, Math.min(Math.max((top + bottom) / 2, inset), floor)];
+  }
+  const title = lane && document.querySelector(".intro__name")?.getBoundingClientRect();
+  if (!title) return [x, floor];
+  const scrolled = scrollY / Math.max(1, document.documentElement.scrollHeight - innerHeight);
+  const start = (title.top + title.bottom) / 2;
+  return [x, start + (floor - start) * Math.min(Math.max(scrolled, 0), 1)];
 }
 
 function homing() {
@@ -942,7 +990,8 @@ function listen() {
 
 function start() {
   if (!moving.matches || !sphereGl || !trailGl) return;
-  document.body.append(trail, dock, shadow, sphere, handle);
+  (document.querySelector(".shell") ?? document.body).prepend(trail);
+  document.body.append(dock, shadow, sphere, handle);
   resize();
   buildColors();
   setupBall();

@@ -434,6 +434,12 @@
     block-size: 100dvh;
     pointer-events: none;
   }
+  .shell:has(> .ball__trail) {
+    isolation: isolate;
+  }
+  .shell:has(> .ball__trail) .shell__intro {
+    z-index: -2;
+  }
   .ball__sphere {
     position: fixed;
     inset-block-start: 0;
@@ -445,8 +451,8 @@
   }
   .ball__dock {
     position: fixed;
-    inset-block-end: 2.55rem;
-    inset-inline-end: 2.55rem;
+    inset-block-start: 0;
+    inset-inline-start: 0;
     z-index: 78;
     inline-size: calc(2.4rem - 2px);
     block-size: calc(2.4rem - 2px);
@@ -460,9 +466,6 @@
     opacity: 1;
   }
   @media (max-width: 48.75em) {
-    .ball__dock {
-      inset-inline: 0.675rem auto;
-    }
     body:has(.ball__sphere) .shell {
       padding-inline-start: 4rem;
     }
