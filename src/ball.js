@@ -922,7 +922,7 @@ function focused() {
       .map((element) => element.closest(".highlight"))
       .find(Boolean);
   }
-  const line = innerHeight / 2;
+  const line = document.documentElement.clientHeight / 2;
   return [...document.querySelectorAll(".highlight")].find((highlight) => {
     const { top, bottom } = highlight.getBoundingClientRect();
     return top <= line && bottom > line;
@@ -938,7 +938,7 @@ function groove() {
 
 function corner(highlight = null) {
   const inset = radius * 2.5;
-  const floor = innerHeight - inset;
+  const floor = document.documentElement.clientHeight - inset;
   const lane = narrow.matches ? null : groove();
   const x = narrow.matches ? radius * 1.25 : (lane ?? document.documentElement.clientWidth - inset);
   if (highlight) {
@@ -1060,6 +1060,11 @@ function start() {
   }).observe(document.body);
   addEventListener("resize", () => {
     resize();
+    if (parked && height === 0) {
+      const [x, y] = corner(focused());
+      position = [x, y + scrollY];
+      velocity = [0, 0];
+    }
     wake();
   });
   dark.addEventListener("change", () => {
