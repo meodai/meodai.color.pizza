@@ -23,7 +23,7 @@ const TILT = 2400;
 const FRICTION = 0.9;
 const TOP_SPEED = 2500;
 const LIGHT = normalize([-0.45, -0.55, -0.7]);
-const HALF = normalize([LIGHT[0], LIGHT[1], LIGHT[2] - 1]);
+const LAMP = 240;
 
 const trail = document.createElement("canvas");
 const sphere = document.createElement("canvas");
@@ -77,6 +77,7 @@ const BALL_FRAGMENT = `#version 300 es
   uniform vec3 paint;
   uniform vec3 paper;
   uniform float extent;
+  uniform vec3 lamp;
   ${LETTER}
   vec3 toGamma(vec3 v) {
     v = clamp(v, 0.0, 1.0);
@@ -90,9 +91,10 @@ const BALL_FRAGMENT = `#version 300 es
     float t = acos(clamp(-body.z, -1.0, 1.0)) / ${number(Math.PI)};
     vec3 tint = mix(paint, paper, smoothstep(${number(RIM - 0.005)}, ${number(RIM)}, t));
     tint = mix(tint, paint, letter(body));
-    float light = 0.4 + 0.75 * max(0.0, dot(n, vec3(${LIGHT.map(number)})));
+    float light = 0.4 + 0.75 * max(0.0, dot(n, lamp));
     float glow =
-      pow(max(0.0, dot(n, vec3(${HALF.map(number)}))), 48.0) * 0.6 + pow(1.0 + n.z, 3.0) * 0.15;
+      pow(max(0.0, dot(n, normalize(lamp - vec3(0.0, 0.0, 1.0)))), 48.0) * 0.6 +
+      pow(1.0 + n.z, 3.0) * 0.15;
     float alpha = min(1.0, (1.0 - sqrt(d)) * extent * 1.5);
     color = vec4(toGamma(min(tint * light + glow, 1.0)) * alpha, alpha);
   }`;
@@ -210,6 +212,8 @@ let target = null;
 let parked = true;
 let armed = false;
 let pointer = null;
+let glare = null;
+let lamp = LIGHT;
 let rotation = [1, 0, 0, 0];
 let points = [];
 let splashes = [];
@@ -348,7 +352,14 @@ function setupBall() {
   ball = {
     ...shape(
       gl,
-      compile(gl, BALL_VERTEX, BALL_FRAGMENT, ["orient", "paint", "paper", "extent", "label"]),
+      compile(gl, BALL_VERTEX, BALL_FRAGMENT, [
+        "orient",
+        "paint",
+        "paper",
+        "extent",
+        "lamp",
+        "label",
+      ]),
     ),
     label: texture(gl, label),
   };
@@ -509,7 +520,7 @@ function axes() {
 }
 
 function paintSphere() {
-  const key = `${rotation.join()},${height}`;
+  const key = `${rotation.join()},${height},${lamp.join()}`;
   if (key === drawn || sphereGl.isContextLost()) return;
   drawn = key;
   const gl = sphereGl;
@@ -523,6 +534,7 @@ function paintSphere() {
   gl.uniform3fv(uniforms.paint, paint);
   gl.uniform3fv(uniforms.paper, paper);
   gl.uniform1f(uniforms.extent, sphere.width / 2);
+  gl.uniform3fv(uniforms.lamp, lamp);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, ball.label);
   gl.uniform1i(uniforms.label, 0);
@@ -738,17 +750,30 @@ function step(now) {
   });
   prints = prints.filter((print) => now - print.time < TRAIL_LIFE);
 
+  const lit = aim(dt);
   paintTrail(now);
   paintSphere();
   place();
 
   const resting =
-    height === 0 && speed < 0.5 && Math.hypot(tx - position[0], ty - position[1]) < 0.5;
+    lit && height === 0 && speed < 0.5 && Math.hypot(tx - position[0], ty - position[1]) < 0.5;
   paintIcon(now, resting);
   frame =
     resting && !points.length && !splashes.length && !prints.length
       ? 0
       : requestAnimationFrame(step);
+}
+
+function aim(dt) {
+  const goal = glare
+    ? normalize([(glare[0] - position[0]) / LAMP, (glare[1] - position[1] + scrollY) / LAMP, -1])
+    : LIGHT;
+  if (Math.hypot(...goal.map((v, i) => v - lamp[i])) < 0.002) {
+    lamp = goal;
+    return true;
+  }
+  lamp = normalize(lamp.map((v, i) => v + (goal[i] - v) * (1 - Math.exp(-dt / 0.08))));
+  return false;
 }
 
 function turn(ax, ay, now) {
@@ -877,6 +902,7 @@ function release() {
 
 function follow(event) {
   if (event.pointerType !== "mouse") return;
+  glare = [event.clientX, event.clientY];
   if (parked) {
     pointer = [event.clientX, event.clientY];
     wake();
@@ -934,6 +960,7 @@ function start() {
   addEventListener("pointermove", follow, { passive: true });
   document.documentElement.addEventListener("pointerleave", () => {
     pointer = null;
+    glare = null;
     wake();
   });
   addEventListener("pointerdown", jump, { passive: true });
