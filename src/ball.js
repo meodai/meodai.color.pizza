@@ -213,6 +213,7 @@ let band = null;
 let bandWidth = 0;
 let bandHeight = 0;
 let pageHeight = 0;
+let nudge = 0;
 let ball = null;
 let floor = null;
 const STROKE_SIZE = 9;
@@ -527,6 +528,8 @@ function resize() {
   pixelRatio = devicePixelRatio || 1;
   radius = sphere.offsetWidth / 2;
   pageHeight = Math.max(document.body.offsetHeight, innerHeight);
+  const name = document.querySelector(".intro__name");
+  nudge = name ? parseFloat(getComputedStyle(name).fontSize) * 0.1 : 0;
   const width = document.documentElement.clientWidth;
   const height = Math.min(Math.ceil(innerHeight * BAND), pageHeight);
   if (width !== bandWidth || height !== bandHeight || trail.width !== width * pixelRatio) {
@@ -946,7 +949,7 @@ function corner(highlight = null) {
     (lane || narrow.matches) && document.querySelector(".intro__name")?.getBoundingClientRect();
   if (!title) return [x, floor];
   const scrolled = scrollY / Math.max(1, pageHeight - innerHeight);
-  const start = (title.top + title.bottom) / 2 + (narrow.matches ? scrollY : 0);
+  const start = (title.top + title.bottom) / 2 - nudge + (narrow.matches ? scrollY : 0);
   return [x, start + (floor - start) * Math.min(Math.max(scrolled, 0), 1)];
 }
 
