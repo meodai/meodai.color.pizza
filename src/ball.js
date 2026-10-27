@@ -13,7 +13,6 @@ const THIN = 0.2;
 const WIDE = 1.1;
 const SWELL = 0.8;
 const NARROW = 0.1;
-const RAMP = 2048;
 const COVER = 0.75;
 const EDGE = 1 - 2 * COVER;
 const RIM = Math.acos(EDGE) / Math.PI;
@@ -45,19 +44,163 @@ shadow.setAttribute("aria-hidden", "true");
 dock.className = "ball__dock";
 dock.setAttribute("aria-hidden", "true");
 
-const trailContext = trail.getContext("2d");
-const sphereContext = sphere.getContext("2d");
+const sphereGl = sphere.getContext("webgl2", { preserveDrawingBuffer: true, antialias: false });
+const trailGl = trail.getContext("webgl2", { antialias: false });
+
+const number = (value) => value.toFixed(6);
+const CLIP = `
+  uniform vec2 view;
+  uniform float scroll;
+  vec4 toClip(vec2 at) {
+    return vec4(at.x / view.x * 2.0 - 1.0, 1.0 - (at.y - scroll) / view.y * 2.0, 0.0, 1.0);
+  }`;
+const LETTER = `
+  uniform sampler2D label;
+  float letter(vec3 body) {
+    if (body.z <= ${number(-EDGE)}) return 0.0;
+    vec2 uv = vec2(body.x, -body.y) / ${number(LABEL_SPAN)};
+    if (abs(uv.x) >= 1.0 || abs(uv.y) >= 1.0) return 0.0;
+    return texture(label, (uv + 1.0) / 2.0).a;
+  }`;
+const BALL_VERTEX = `#version 300 es
+  in vec2 corner;
+  out vec2 p;
+  void main() {
+    p = vec2(corner.x, -corner.y);
+    gl_Position = vec4(corner, 0.0, 1.0);
+  }`;
+const BALL_FRAGMENT = `#version 300 es
+  precision highp float;
+  in vec2 p;
+  out vec4 color;
+  uniform mat3 orient;
+  uniform vec3 paint;
+  uniform vec3 paper;
+  uniform float extent;
+  ${LETTER}
+  vec3 toGamma(vec3 v) {
+    v = clamp(v, 0.0, 1.0);
+    return mix(v * 12.92, 1.055 * pow(v, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, v));
+  }
+  void main() {
+    float d = dot(p, p);
+    if (d >= 1.0) discard;
+    vec3 n = vec3(p, -sqrt(1.0 - d));
+    vec3 body = orient * n;
+    float t = acos(clamp(-body.z, -1.0, 1.0)) / ${number(Math.PI)};
+    vec3 tint = mix(paint, paper, smoothstep(${number(RIM - 0.005)}, ${number(RIM)}, t));
+    tint = mix(tint, paint, letter(body));
+    float light = 0.4 + 0.75 * max(0.0, dot(n, vec3(${LIGHT.map(number)})));
+    float glow =
+      pow(max(0.0, dot(n, vec3(${HALF.map(number)}))), 48.0) * 0.6 + pow(1.0 + n.z, 3.0) * 0.15;
+    float alpha = min(1.0, (1.0 - sqrt(d)) * extent * 1.5);
+    color = vec4(toGamma(min(tint * light + glow, 1.0)) * alpha, alpha);
+  }`;
+const STROKE_VERTEX = `#version 300 es
+  in vec2 corner;
+  in vec2 center;
+  in float size;
+  in vec2 facing;
+  in float cut;
+  uniform float ratio;
+  out vec2 local;
+  flat out float vSize;
+  flat out vec2 vFacing;
+  flat out float vCut;
+  ${CLIP}
+  void main() {
+    local = corner * (size + 1.0 / ratio);
+    vSize = size;
+    vFacing = facing;
+    vCut = cut;
+    gl_Position = toClip(center + local);
+  }`;
+const STROKE_FRAGMENT = `#version 300 es
+  precision highp float;
+  in vec2 local;
+  flat in float vSize;
+  flat in vec2 vFacing;
+  flat in float vCut;
+  out vec4 color;
+  uniform float ratio;
+  uniform vec3 tint;
+  void main() {
+    float a = clamp((vSize - length(local)) * ratio + 0.5, 0.0, 1.0) *
+      clamp((dot(local, vFacing) - vCut) * ratio + 0.5, 0.0, 1.0);
+    if (a <= 0.0) discard;
+    color = vec4(tint * a, a);
+  }`;
+const SPRITE_VERTEX = `#version 300 es
+  in vec2 corner;
+  uniform vec4 rect;
+  out vec2 uv;
+  ${CLIP}
+  void main() {
+    uv = corner * 0.5 + 0.5;
+    gl_Position = toClip(rect.xy + corner * rect.zw * 0.5);
+  }`;
+const SPRITE_FRAGMENT = `#version 300 es
+  precision highp float;
+  in vec2 uv;
+  out vec4 color;
+  uniform sampler2D sprite;
+  uniform float alpha;
+  void main() {
+    color = texture(sprite, uv) * alpha;
+  }`;
+const PRINT_VERTEX = `#version 300 es
+  in vec2 corner;
+  in vec2 center;
+  in vec2 direction;
+  in float along;
+  in float fade;
+  in vec3 axisX;
+  in vec3 axisY;
+  in vec3 axisZ;
+  uniform float across;
+  out vec2 ground;
+  flat out float vFade;
+  flat out vec3 vX;
+  flat out vec3 vY;
+  flat out vec3 vZ;
+  ${CLIP}
+  void main() {
+    ground = direction * corner.x * along + vec2(-direction.y, direction.x) * corner.y * across;
+    vFade = fade;
+    vX = axisX;
+    vY = axisY;
+    vZ = axisZ;
+    gl_Position = toClip(center + ground);
+  }`;
+const PRINT_FRAGMENT = `#version 300 es
+  precision highp float;
+  in vec2 ground;
+  flat in float vFade;
+  flat in vec3 vX;
+  flat in vec3 vY;
+  flat in vec3 vZ;
+  out vec4 color;
+  uniform float radius;
+  uniform vec3 tint;
+  ${LETTER}
+  void main() {
+    vec2 at = ground / radius;
+    float a = letter(normalize(vX * at.x + vY * at.y + vZ)) * vFade;
+    if (a <= 0.0) discard;
+    color = vec4(tint * a, a);
+  }`;
 
 let radius = 0;
 let pixelRatio = 1;
-let ramp = [];
 let label = null;
-let lettering = [0, 0, 0];
-let image = null;
-let pixels = [];
+let paint = [0, 0, 0];
+let paper = [1, 1, 1];
+let ink = [0, 0, 0];
 let drawn = null;
-const GAMMA = 4096;
-const gamma = Uint8ClampedArray.from({ length: GAMMA + 1 }, (_, i) => toGamma(i / GAMMA) * 255);
+let ball = null;
+let floor = null;
+let strokeData = new Float32Array(6 * 4096);
+let printData = new Float32Array(15 * 1024);
 let position = null;
 let velocity = [0, 0];
 let height = 0;
@@ -69,7 +212,8 @@ let armed = false;
 let pointer = null;
 let rotation = [1, 0, 0, 0];
 let points = [];
-let stamps = [];
+let splashes = [];
+let prints = [];
 let stroke = 0;
 let iconTime = -Infinity;
 let iconBusy = false;
@@ -111,40 +255,148 @@ async function buildLabel() {
   await document.fonts.load(`${size}px ${family}`, "DA");
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = LABEL;
-  const context = canvas.getContext("2d", { willReadFrequently: true });
+  const context = canvas.getContext("2d");
   context.font = `${size}px ${family}`;
   context.textAlign = "center";
   const { actualBoundingBoxAscent } = context.measureText("DA");
   context.fillText("DA", LABEL / 2, (LABEL + actualBoundingBoxAscent) / 2);
-  const { data } = context.getImageData(0, 0, LABEL, LABEL);
+  label = canvas;
+  ball.label = texture(sphereGl, label, ball.label);
+  floor.label = texture(trailGl, label, floor.label);
   drawn = null;
-  label = Float32Array.from({ length: LABEL * LABEL }, (_, i) => data[i * 4 + 3] / 255);
   wake();
 }
 
-function buildRamp() {
-  const paper = readColor(getComputedStyle(document.body).backgroundColor);
-  const paintColor = readColor(
-    getComputedStyle(document.documentElement).getPropertyValue("--color-ink"),
-  );
-  lettering = paintColor;
+function buildColors() {
+  paper = readColor(getComputedStyle(document.body).backgroundColor);
+  paint = readColor(getComputedStyle(document.documentElement).getPropertyValue("--color-ink"));
+  ink = paint.map(toGamma);
   drawn = null;
-  const stops = [
-    [0, paintColor],
-    [RIM - 0.005, paintColor],
-    [RIM, paper],
-    [1, paper],
-  ];
-  ramp = Array.from({ length: RAMP + 1 }, (_, i) => {
-    const t = Math.acos(1 - (2 * i) / RAMP) / Math.PI;
-    const next = stops.findIndex(([at]) => at >= t);
-    if (next <= 0) return stops[0][1];
-    const [from, a] = stops[next - 1];
-    const [to, b] = stops[next];
-    const k = (t - from) / (to - from);
-    const s = k * k * (3 - 2 * k);
-    return a.map((v, j) => v + (b[j] - v) * s);
-  });
+}
+
+function compile(gl, vertex, fragment, names) {
+  const program = gl.createProgram();
+  for (const [type, source] of [
+    [gl.VERTEX_SHADER, vertex],
+    [gl.FRAGMENT_SHADER, fragment],
+  ]) {
+    const shader = gl.createShader(type);
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      throw new Error(gl.getShaderInfoLog(shader));
+    }
+    gl.attachShader(program, shader);
+  }
+  gl.linkProgram(program);
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    throw new Error(gl.getProgramInfoLog(program));
+  }
+  const uniforms = Object.fromEntries(
+    names.map((name) => [name, gl.getUniformLocation(program, name)]),
+  );
+  return { program, uniforms };
+}
+
+function attributes(gl, program, buffer, layout, divisor) {
+  const stride = layout.reduce((sum, [, size]) => sum + size, 0) * 4;
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+  let offset = 0;
+  for (const [name, size] of layout) {
+    const location = gl.getAttribLocation(program, name);
+    if (location >= 0) {
+      gl.enableVertexAttribArray(location);
+      gl.vertexAttribPointer(location, size, gl.FLOAT, false, stride, offset);
+      gl.vertexAttribDivisor(location, divisor);
+    }
+    offset += size * 4;
+  }
+}
+
+function shape(gl, { program, uniforms }, layout = null) {
+  const vao = gl.createVertexArray();
+  gl.bindVertexArray(vao);
+  const corners = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, corners);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+  attributes(gl, program, corners, [["corner", 2]], 0);
+  const instances = layout && gl.createBuffer();
+  if (layout) attributes(gl, program, instances, layout, 1);
+  gl.bindVertexArray(null);
+  return { program, uniforms, vao, instances };
+}
+
+function texture(gl, source, previous = null) {
+  if (previous) gl.deleteTexture(previous);
+  const result = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, result);
+  gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  if (source) {
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
+  } else {
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
+  }
+  return result;
+}
+
+function setupBall() {
+  const gl = sphereGl;
+  ball = {
+    ...shape(
+      gl,
+      compile(gl, BALL_VERTEX, BALL_FRAGMENT, ["orient", "paint", "paper", "extent", "label"]),
+    ),
+    label: texture(gl, label),
+  };
+  drawn = null;
+}
+
+function setupFloor() {
+  const gl = trailGl;
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+  floor = {
+    strokes: shape(
+      gl,
+      compile(gl, STROKE_VERTEX, STROKE_FRAGMENT, ["view", "scroll", "ratio", "tint"]),
+      [
+        ["center", 2],
+        ["size", 1],
+        ["facing", 2],
+        ["cut", 1],
+      ],
+    ),
+    sprites: shape(
+      gl,
+      compile(gl, SPRITE_VERTEX, SPRITE_FRAGMENT, ["view", "scroll", "rect", "sprite", "alpha"]),
+    ),
+    prints: shape(
+      gl,
+      compile(gl, PRINT_VERTEX, PRINT_FRAGMENT, [
+        "view",
+        "scroll",
+        "across",
+        "radius",
+        "tint",
+        "label",
+      ]),
+      [
+        ["center", 2],
+        ["direction", 2],
+        ["along", 1],
+        ["fade", 1],
+        ["axisX", 3],
+        ["axisY", 3],
+        ["axisZ", 3],
+      ],
+    ),
+    label: texture(gl, label),
+  };
+  splashes = splashes.filter((splash) => !splash.texture);
 }
 
 function rotate([qx, qy, qz, qw], [x, y, z]) {
@@ -178,14 +430,6 @@ function spin(q, [wx, wy, wz], dt) {
   return r.map((v) => v / length);
 }
 
-function ink() {
-  const dot = Math.max(-rotate(conjugate(rotation), [0, 0, 1])[2], EDGE + 0.02);
-  const [r, g, b] = ramp[Math.round(((1 - dot) / 2) * RAMP)].map((v) =>
-    Math.round(toGamma(v) * 255),
-  );
-  return `rgb(${r} ${g} ${b})`;
-}
-
 function inked() {
   return rotate(rotation, [0, 0, -1])[2] > EDGE - 0.3;
 }
@@ -212,15 +456,14 @@ function splash(angle, spread, count, reach, now) {
   canvas.width = canvas.height = Math.ceil(extent * 2 * pixelRatio);
   const context = canvas.getContext("2d");
   context.setTransform(pixelRatio, 0, 0, pixelRatio, extent * pixelRatio, extent * pixelRatio);
-  context.fillStyle = context.strokeStyle = ink();
+  context.fillStyle = context.strokeStyle = `rgb(${ink.map((v) => Math.round(v * 255)).join(" ")})`;
   context.lineCap = "round";
   for (const drop of drops) paintSplat(context, drop);
-  stamps.push({
+  splashes.push({
     x: position[0],
     y: position[1],
-    canvas,
-    width: extent * 2,
-    height: extent * 2,
+    texture: texture(trailGl, canvas),
+    size: extent * 2,
     time: now,
   });
 }
@@ -252,63 +495,38 @@ function resize() {
   trail.height = innerHeight * pixelRatio;
   trail.style.width = `${innerWidth}px`;
   trail.style.height = `${innerHeight}px`;
-  const size = Math.ceil(radius * 2 * pixelRatio);
-  sphere.width = sphere.height = size;
-  image = sphereContext.createImageData(size, size);
-  pixels = [];
-  const half = size / 2;
-  for (let py = 0; py < size; py++) {
-    const y = (py + 0.5 - half) / half;
-    for (let px = 0; px < size; px++) {
-      const x = (px + 0.5 - half) / half;
-      const d = x * x + y * y;
-      if (d >= 1) continue;
-      const z = -Math.sqrt(1 - d);
-      const diffuse = Math.max(0, x * LIGHT[0] + y * LIGHT[1] + z * LIGHT[2]);
-      pixels.push({
-        i: (py * size + px) * 4,
-        x,
-        y,
-        z,
-        light: 0.4 + 0.75 * diffuse,
-        glow:
-          Math.max(0, x * HALF[0] + y * HALF[1] + z * HALF[2]) ** 48 * 0.6 + (1 + z) ** 3 * 0.15,
-        alpha: Math.min(1, (1 - Math.sqrt(d)) * half * 1.5) * 255,
-      });
-    }
-  }
+  sphere.width = sphere.height = Math.ceil(radius * 2 * pixelRatio);
   drawn = null;
+}
+
+function axes() {
+  const inverse = conjugate(rotation);
+  return [
+    ...rotate(inverse, [1, 0, 0]),
+    ...rotate(inverse, [0, 1, 0]),
+    ...rotate(inverse, [0, 0, 1]),
+  ];
 }
 
 function paintSphere() {
   const key = `${rotation.join()},${height}`;
-  if (key === drawn) return;
+  if (key === drawn || sphereGl.isContextLost()) return;
   drawn = key;
-  const inverse = conjugate(rotation);
-  const [ax, ay, az] = rotate(inverse, [1, 0, 0]);
-  const [bx, by, bz] = rotate(inverse, [0, 1, 0]);
-  const [cx, cy, cz] = rotate(inverse, [0, 0, 1]);
-  const data = image.data;
-  for (const { i, x, y, z, light, glow, alpha } of pixels) {
-    const bodyZ = az * x + bz * y + cz * z;
-    const color = ramp[(((1 + bodyZ) / 2) * RAMP + 0.5) | 0];
-    let red = color[0];
-    let green = color[1];
-    let blue = color[2];
-    if (label && bodyZ > -EDGE) {
-      const a = letter(ax * x + bx * y + cx * z, ay * x + by * y + cy * z, bodyZ);
-      if (a) {
-        red += (lettering[0] - red) * a;
-        green += (lettering[1] - green) * a;
-        blue += (lettering[2] - blue) * a;
-      }
-    }
-    data[i] = gamma[(Math.min(red * light + glow, 1) * GAMMA) | 0];
-    data[i + 1] = gamma[(Math.min(green * light + glow, 1) * GAMMA) | 0];
-    data[i + 2] = gamma[(Math.min(blue * light + glow, 1) * GAMMA) | 0];
-    data[i + 3] = alpha;
-  }
-  sphereContext.putImageData(image, 0, 0);
+  const gl = sphereGl;
+  const { program, uniforms, vao } = ball;
+  gl.viewport(0, 0, sphere.width, sphere.height);
+  gl.clearColor(0, 0, 0, 0);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.useProgram(program);
+  gl.bindVertexArray(vao);
+  gl.uniformMatrix3fv(uniforms.orient, false, axes());
+  gl.uniform3fv(uniforms.paint, paint);
+  gl.uniform3fv(uniforms.paper, paper);
+  gl.uniform1f(uniforms.extent, sphere.width / 2);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, ball.label);
+  gl.uniform1i(uniforms.label, 0);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
 
 function place() {
@@ -323,88 +541,41 @@ function place() {
   handle.style.translate = `${x - radius}px ${y - radius}px`;
 }
 
-function stamp(x, y, size, [px, py, pz], fade) {
+function stamp(count, x, y, size, [px, py, pz], fade) {
   const reach = Math.hypot(px, py);
   const cut =
     reach < 1e-6 ? -Math.sign(pz - EDGE) * Infinity : (radius * fade * (EDGE - pz)) / reach;
-  if (cut >= size) return;
-  const facing = cut <= -size ? 0 : Math.atan2(py, px);
-  const spread = cut <= -size ? Math.PI : Math.acos(cut / size);
-  trailContext.beginPath();
-  trailContext.arc(x, y, size, facing - spread, facing + spread);
-  trailContext.fill();
-}
-
-function letter(x, y, z) {
-  if (!label || z <= -EDGE) return 0;
-  const u = x / LABEL_SPAN;
-  const v = -y / LABEL_SPAN;
-  if (Math.abs(u) >= 1 || Math.abs(v) >= 1) return 0;
-  const row = (((v + 1) / 2) * LABEL) | 0;
-  const column = (((u + 1) / 2) * LABEL) | 0;
-  return label[row * LABEL + column];
+  if (cut >= size) return count;
+  if (strokeData.length < (count + 1) * 6) {
+    const grown = new Float32Array(strokeData.length * 2);
+    grown.set(strokeData);
+    strokeData = grown;
+  }
+  const whole = cut <= -size;
+  strokeData.set(
+    [x, y, size, whole ? 0 : px / reach, whole ? 0 : py / reach, whole ? -1e6 : cut],
+    count * 6,
+  );
+  return count + 1;
 }
 
 function press(now) {
   const speed = Math.hypot(...velocity);
   if (!label || speed < 1) return;
-  const inverse = conjugate(rotation);
-  const [ax, ay, az] = rotate(inverse, [1, 0, 0]);
-  const [bx, by, bz] = rotate(inverse, [0, 1, 0]);
-  const [cx, cy, cz] = rotate(inverse, [0, 0, 1]);
-  if (cz < 0) return;
-  const mx = velocity[0] / speed;
-  const my = velocity[1] / speed;
-  const along = Math.min(Math.max(1.5, speed / 60), 6) / 2 + 0.4;
-  const across = radius * 0.9;
-  const halfWidth = Math.abs(mx) * along + Math.abs(my) * across;
-  const halfHeight = Math.abs(my) * along + Math.abs(mx) * across;
-  const columns = Math.ceil(halfWidth * 2 * pixelRatio) + 2;
-  const rows = Math.ceil(halfHeight * 2 * pixelRatio) + 2;
-  const step = 0.5 / pixelRatio;
-  let image = null;
-  for (let p = -across; p <= across; p += step) {
-    for (let q = -along; q <= along; q += step) {
-      const dx = q * mx - p * my;
-      const dy = q * my + p * mx;
-      const u = dx / radius;
-      const v = dy / radius;
-      const length = Math.sqrt(u * u + v * v + 1);
-      const a = letter(
-        (ax * u + bx * v + cx) / length,
-        (ay * u + by * v + cy) / length,
-        (az * u + bz * v + cz) / length,
-      );
-      if (!a) continue;
-      image ??= new ImageData(columns, rows);
-      const column = ((dx + halfWidth) * pixelRatio + 1) | 0;
-      const row = ((dy + halfHeight) * pixelRatio + 1) | 0;
-      const i = (row * columns + column) * 4;
-      image.data[i + 3] = Math.max(image.data[i + 3], a * 255);
-    }
-  }
-  if (!image) return;
-  const [red, green, blue] = lettering.map((value) => Math.round(toGamma(value) * 255));
-  for (let i = 0; i < image.data.length; i += 4) {
-    image.data[i] = red;
-    image.data[i + 1] = green;
-    image.data[i + 2] = blue;
-  }
-  const canvas = document.createElement("canvas");
-  canvas.width = columns;
-  canvas.height = rows;
-  canvas.getContext("2d").putImageData(image, 0, 0);
-  stamps.push({
+  const orient = axes();
+  if (orient[8] < 0) return;
+  prints.push({
     x: position[0],
     y: position[1],
-    canvas,
-    width: columns / pixelRatio,
-    height: rows / pixelRatio,
+    direction: [velocity[0] / speed, velocity[1] / speed],
+    along: Math.min(Math.max(1.5, speed / 60), 6) / 2 + 0.4,
+    orient,
     time: now,
   });
 }
 
 function paintIcon(now, force) {
+  if (!force && !hovering.matches) return;
   if (iconBusy) iconStale ||= force;
   if (iconBusy || (!force && now - iconTime < 250)) return;
   const link = document.querySelector('link[rel="icon"]');
@@ -428,24 +599,27 @@ function paintIcon(now, force) {
 }
 
 function paintTrail(now) {
-  trailContext.setTransform(pixelRatio, 0, 0, pixelRatio, 0, -scrollY * pixelRatio);
-  trailContext.clearRect(0, scrollY, innerWidth, innerHeight);
+  const gl = trailGl;
+  if (gl.isContextLost()) return;
+  gl.viewport(0, 0, trail.width, trail.height);
+  gl.clearColor(0, 0, 0, 0);
+  gl.clear(gl.COLOR_BUFFER_BIT);
   const top = scrollY - radius * 2;
   const bottom = scrollY + innerHeight + radius * 2;
-  let color = null;
+  let count = 0;
   for (let i = 0; i < points.length; i++) {
     const a = points[i - 1];
     const b = points[i];
     const from = a && !b.gap ? a : b;
     if (Math.max(from.y, b.y) < top || Math.min(from.y, b.y) > bottom) continue;
-    if (b.color !== color) trailContext.fillStyle = color = b.color;
     const fade = Math.sqrt(1 - (now - b.time) / TRAIL_LIFE);
     const spacing = Math.max(1.5, Math.min(from.width, b.width) * fade * 0.25);
     const steps = Math.max(1, Math.ceil(Math.hypot(b.x - from.x, b.y - from.y) / spacing));
     for (let s = 1; s <= steps; s++) {
       const k = s / steps;
       const mix = (u, v) => u + (v - u) * k;
-      stamp(
+      count = stamp(
+        count,
         mix(from.x, b.x),
         mix(from.y, b.y),
         (mix(from.width, b.width) / 2) * fade,
@@ -454,12 +628,57 @@ function paintTrail(now) {
       );
     }
   }
-  for (const { x, y, canvas, width, height, time } of stamps) {
-    if (y + height / 2 < top || y - height / 2 > bottom) continue;
-    trailContext.globalAlpha = 1 - (now - time) / TRAIL_LIFE;
-    trailContext.drawImage(canvas, x - width / 2, y - height / 2, width, height);
+  if (count) {
+    const { program, uniforms, vao, instances } = floor.strokes;
+    gl.useProgram(program);
+    gl.bindVertexArray(vao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, instances);
+    gl.bufferData(gl.ARRAY_BUFFER, strokeData.subarray(0, count * 6), gl.STREAM_DRAW);
+    gl.uniform2f(uniforms.view, innerWidth, innerHeight);
+    gl.uniform1f(uniforms.scroll, scrollY);
+    gl.uniform1f(uniforms.ratio, pixelRatio);
+    gl.uniform3fv(uniforms.tint, ink);
+    gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, count);
   }
-  trailContext.globalAlpha = 1;
+  const visible = splashes.filter(({ y, size }) => y + size / 2 >= top && y - size / 2 <= bottom);
+  if (visible.length) {
+    const { program, uniforms, vao } = floor.sprites;
+    gl.useProgram(program);
+    gl.bindVertexArray(vao);
+    gl.uniform2f(uniforms.view, innerWidth, innerHeight);
+    gl.uniform1f(uniforms.scroll, scrollY);
+    gl.uniform1i(uniforms.sprite, 0);
+    gl.activeTexture(gl.TEXTURE0);
+    for (const { x, y, texture, size, time } of visible) {
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.uniform4f(uniforms.rect, x, y, size, size);
+      gl.uniform1f(uniforms.alpha, 1 - (now - time) / TRAIL_LIFE);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
+  }
+  const pressed = prints.filter(({ y }) => y >= top && y <= bottom);
+  if (pressed.length) {
+    if (printData.length < pressed.length * 15) {
+      printData = new Float32Array(pressed.length * 30);
+    }
+    pressed.forEach(({ x, y, direction, along, orient, time }, i) => {
+      printData.set([x, y, ...direction, along, 1 - (now - time) / TRAIL_LIFE, ...orient], i * 15);
+    });
+    const { program, uniforms, vao, instances } = floor.prints;
+    gl.useProgram(program);
+    gl.bindVertexArray(vao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, instances);
+    gl.bufferData(gl.ARRAY_BUFFER, printData.subarray(0, pressed.length * 15), gl.STREAM_DRAW);
+    gl.uniform2f(uniforms.view, innerWidth, innerHeight);
+    gl.uniform1f(uniforms.scroll, scrollY);
+    gl.uniform1f(uniforms.across, radius * 0.9);
+    gl.uniform1f(uniforms.radius, radius);
+    gl.uniform3fv(uniforms.tint, ink);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, floor.label);
+    gl.uniform1i(uniforms.label, 0);
+    gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, pressed.length);
+  }
 }
 
 function step(now) {
@@ -501,9 +720,8 @@ function step(now) {
     stroke += (goal - stroke) * (1 - Math.exp(-dt / ease));
     const width = stroke;
     if (gap || Math.hypot(position[0] - previous.x, position[1] - previous.y) > 1.5) {
-      const color = ink();
       const pole = rotate(rotation, [0, 0, -1]);
-      points.push({ x: position[0], y: position[1], color, width, pole, gap, time: now });
+      points.push({ x: position[0], y: position[1], width, pole, gap, time: now });
       press(now);
     } else {
       previous.width = width;
@@ -513,7 +731,12 @@ function step(now) {
     previous.lifted = true;
   }
   points = points.filter((point) => now - point.time < TRAIL_LIFE);
-  stamps = stamps.filter((stamp) => now - stamp.time < TRAIL_LIFE);
+  splashes = splashes.filter((splash) => {
+    const alive = now - splash.time < TRAIL_LIFE;
+    if (!alive) trailGl.deleteTexture(splash.texture);
+    return alive;
+  });
+  prints = prints.filter((print) => now - print.time < TRAIL_LIFE);
 
   paintTrail(now);
   paintSphere();
@@ -522,7 +745,10 @@ function step(now) {
   const resting =
     height === 0 && speed < 0.5 && Math.hypot(tx - position[0], ty - position[1]) < 0.5;
   paintIcon(now, resting);
-  frame = resting && !points.length && !stamps.length ? 0 : requestAnimationFrame(step);
+  frame =
+    resting && !points.length && !splashes.length && !prints.length
+      ? 0
+      : requestAnimationFrame(step);
 }
 
 function turn(ax, ay, now) {
@@ -689,10 +915,12 @@ function listen() {
 }
 
 function start() {
-  if (!moving.matches) return;
+  if (!moving.matches || !sphereGl || !trailGl) return;
   document.body.append(trail, dock, shadow, sphere, handle);
   resize();
-  buildRamp();
+  buildColors();
+  setupBall();
+  setupFloor();
   buildLabel();
   const [x, y] = corner();
   position = [x, y + scrollY];
@@ -720,9 +948,19 @@ function start() {
     wake();
   });
   dark.addEventListener("change", () => {
-    buildRamp();
+    buildColors();
     wake();
   });
+  for (const [canvas, setup] of [
+    [sphere, setupBall],
+    [trail, setupFloor],
+  ]) {
+    canvas.addEventListener("webglcontextlost", (event) => event.preventDefault());
+    canvas.addEventListener("webglcontextrestored", () => {
+      setup();
+      wake();
+    });
+  }
 }
 
 start();
