@@ -231,7 +231,7 @@ let armed = false;
 let pointer = null;
 let glare = null;
 let lamp = LIGHT;
-let rotation = [1, 0, 0, 0];
+let rotation = [0, 0, 0, 1];
 let points = [];
 let splashes = [];
 let prints = [];
@@ -589,10 +589,13 @@ function paintSphere() {
 function place() {
   const x = position[0];
   const y = position[1] - scrollY;
-  const reach = radius * 1.15;
+  const reach = shadow.offsetWidth / 2;
   sphere.style.translate = `${x - radius}px ${y - radius}px`;
   sphere.style.scale = 1 + height / 500;
-  shadow.style.translate = `${x - reach + radius * 0.35 + height * 0.45}px ${y - reach + radius * 0.45 + height * 0.55}px`;
+  const slant = Math.min(1.6, Math.hypot(lamp[0], lamp[1]) / Math.max(-lamp[2], 0.01));
+  const angle = Math.atan2(-lamp[1], -lamp[0]);
+  const cast = slant * (radius * 0.55 + height * 0.7);
+  shadow.style.translate = `${x - reach + Math.cos(angle) * cast}px ${y - reach + Math.sin(angle) * cast}px`;
   shadow.style.scale = 1 + (height * 0.25) / reach;
   shadow.style.opacity = 1 / (1 + height / 70);
   handle.style.translate = `${x - radius}px ${y - radius}px`;
