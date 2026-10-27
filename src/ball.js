@@ -22,6 +22,7 @@ const TURN = 2000;
 const TILT = 2400;
 const FRICTION = 0.9;
 const TOP_SPEED = 2500;
+const BAND = 1.6;
 const LIGHT = normalize([-0.45, -0.55, -0.7]);
 const LAMP = 240;
 
@@ -208,6 +209,10 @@ let paint = [0, 0, 0];
 let paper = [1, 1, 1];
 let ink = [0, 0, 0];
 let drawn = null;
+let band = null;
+let bandWidth = 0;
+let bandHeight = 0;
+let pageHeight = 0;
 let ball = null;
 let floor = null;
 const STROKE_SIZE = 9;
@@ -520,12 +525,30 @@ function paintSplat(context, { x, y, angle, size, stretch, bend, flick }) {
 function resize() {
   pixelRatio = devicePixelRatio || 1;
   radius = sphere.offsetWidth / 2;
-  trail.width = innerWidth * pixelRatio;
-  trail.height = innerHeight * pixelRatio;
-  trail.style.width = `${innerWidth}px`;
-  trail.style.height = `${innerHeight}px`;
-  sphere.width = sphere.height = Math.ceil(radius * 2 * pixelRatio);
-  drawn = null;
+  pageHeight = Math.max(document.body.offsetHeight, innerHeight);
+  const width = document.documentElement.clientWidth;
+  const height = Math.min(Math.ceil(innerHeight * BAND), pageHeight);
+  if (width !== bandWidth || height !== bandHeight || trail.width !== width * pixelRatio) {
+    bandWidth = width;
+    bandHeight = height;
+    trail.width = width * pixelRatio;
+    trail.height = height * pixelRatio;
+    trail.style.width = `${width}px`;
+    trail.style.height = `${height}px`;
+  }
+  band = null;
+  const size = Math.ceil(radius * 2 * pixelRatio);
+  if (sphere.width !== size) {
+    sphere.width = sphere.height = size;
+    drawn = null;
+  }
+}
+
+function slide() {
+  if (band !== null && scrollY >= band && scrollY + innerHeight <= band + bandHeight) return;
+  const centered = scrollY - (bandHeight - innerHeight) / 2;
+  band = Math.min(Math.max(centered, 0), Math.max(0, pageHeight - bandHeight));
+  trail.style.translate = `0 ${band}px`;
 }
 
 function axes() {
@@ -635,11 +658,12 @@ function paintIcon(now, force) {
 function paintTrail(now) {
   const gl = trailGl;
   if (gl.isContextLost()) return;
+  slide();
   gl.viewport(0, 0, trail.width, trail.height);
   gl.clearColor(0, 0, 0, 0);
   gl.clear(gl.COLOR_BUFFER_BIT);
-  const top = scrollY - radius * 2;
-  const bottom = scrollY + innerHeight + radius * 2;
+  const top = band - radius * 2;
+  const bottom = band + bandHeight + radius * 2;
   let count = 0;
   for (let i = 0; i < points.length; i++) {
     const a = points[i - 1];
@@ -669,8 +693,8 @@ function paintTrail(now) {
     gl.bindVertexArray(vao);
     gl.bindBuffer(gl.ARRAY_BUFFER, instances);
     gl.bufferData(gl.ARRAY_BUFFER, strokeData.subarray(0, count * STROKE_SIZE), gl.STREAM_DRAW);
-    gl.uniform2f(uniforms.view, innerWidth, innerHeight);
-    gl.uniform1f(uniforms.scroll, scrollY);
+    gl.uniform2f(uniforms.view, bandWidth, bandHeight);
+    gl.uniform1f(uniforms.scroll, band);
     gl.uniform1f(uniforms.ratio, pixelRatio);
     gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, count);
   }
@@ -679,8 +703,8 @@ function paintTrail(now) {
     const { program, uniforms, vao } = floor.sprites;
     gl.useProgram(program);
     gl.bindVertexArray(vao);
-    gl.uniform2f(uniforms.view, innerWidth, innerHeight);
-    gl.uniform1f(uniforms.scroll, scrollY);
+    gl.uniform2f(uniforms.view, bandWidth, bandHeight);
+    gl.uniform1f(uniforms.scroll, band);
     gl.uniform1i(uniforms.sprite, 0);
     gl.activeTexture(gl.TEXTURE0);
     for (const { x, y, texture, size, time } of visible) {
@@ -710,8 +734,8 @@ function paintTrail(now) {
       printData.subarray(0, pressed.length * PRINT_SIZE),
       gl.STREAM_DRAW,
     );
-    gl.uniform2f(uniforms.view, innerWidth, innerHeight);
-    gl.uniform1f(uniforms.scroll, scrollY);
+    gl.uniform2f(uniforms.view, bandWidth, bandHeight);
+    gl.uniform1f(uniforms.scroll, band);
     gl.uniform1f(uniforms.across, radius * 0.9);
     gl.uniform1f(uniforms.radius, radius);
     gl.activeTexture(gl.TEXTURE0);
@@ -911,10 +935,11 @@ function corner(highlight = null) {
     const { top, bottom } = highlight.getBoundingClientRect();
     return [x, Math.min(Math.max((top + bottom) / 2, inset), floor)];
   }
-  const title = lane && document.querySelector(".intro__name")?.getBoundingClientRect();
+  const title =
+    (lane || narrow.matches) && document.querySelector(".intro__name")?.getBoundingClientRect();
   if (!title) return [x, floor];
-  const scrolled = scrollY / Math.max(1, document.documentElement.scrollHeight - innerHeight);
-  const start = (title.top + title.bottom) / 2;
+  const scrolled = scrollY / Math.max(1, pageHeight - innerHeight);
+  const start = (title.top + title.bottom) / 2 + (narrow.matches ? scrollY : 0);
   return [x, start + (floor - start) * Math.min(Math.max(scrolled, 0), 1)];
 }
 
@@ -1018,7 +1043,10 @@ function start() {
   addEventListener("scroll", () => position && wake(), { passive: true });
   addEventListener("load", wake);
   document.fonts.ready.then(wake);
-  new ResizeObserver(() => wake()).observe(document.body);
+  new ResizeObserver(() => {
+    resize();
+    wake();
+  }).observe(document.body);
   addEventListener("resize", () => {
     resize();
     wake();
