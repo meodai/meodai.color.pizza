@@ -293,6 +293,7 @@ async function buildLabel() {
   }
   for (const tone of drawing.querySelectorAll(".portrait__tone"))
     tone.setAttribute("opacity", "0.45");
+  for (const dash of drawing.querySelectorAll(".portrait__dash")) dash.remove();
   const image = new Image();
   image.src = `data:image/svg+xml,${encodeURIComponent(new XMLSerializer().serializeToString(drawing))}`;
   await image.decode();
