@@ -120,14 +120,12 @@
     grid-column: 2 / 4;
     min-inline-size: 0;
     padding-block-start: calc(
-      var(--shell-top) + var(--portrait-width) * 600 / 440 + var(--portrait-gap) - 0.05rem
+      var(--shell-top) + var(--portrait-width) + var(--portrait-gap) - 0.05rem
     );
   }
   @supports (text-box: trim-start cap alphabetic) {
     .shell__content {
-      padding-block-start: calc(
-        var(--shell-top) + var(--portrait-width) * 600 / 440 + var(--portrait-gap)
-      );
+      padding-block-start: calc(var(--shell-top) + var(--portrait-width) + var(--portrait-gap));
     }
   }
 
@@ -199,17 +197,31 @@
   .portrait__drawing {
     inline-size: 100%;
     block-size: auto;
+    color: var(--color-ink);
     fill: none;
-    stroke: var(--color-ink);
-    stroke-width: 1px;
     stroke-linecap: round;
     stroke-linejoin: round;
   }
-  .portrait__drawing path {
-    vector-effect: non-scaling-stroke;
+  .portrait__shade {
+    fill: currentColor;
+    opacity: 0.1;
   }
-  .portrait__pupil {
-    stroke: var(--color-accent);
+  .portrait__tone {
+    opacity: 0.45;
+  }
+  .portrait__eye {
+    fill: var(--color-accent);
+  }
+  @media (prefers-color-scheme: dark) {
+    .portrait__drawing {
+      color: var(--color-accent);
+    }
+    .portrait__tone {
+      opacity: 0.6;
+    }
+    .portrait__eye {
+      fill: #fff;
+    }
   }
 
   .intro {
@@ -324,12 +336,15 @@
     padding-block: 1.5625rem 1.875rem;
   }
   .highlight__link::after {
-    content: "→" / "";
+    content: "↗" / "";
     display: inline-block;
-    margin-inline-start: 0.15em;
-    font-size: 0.9em;
-    rotate: -45deg;
-    translate: 0 -0.2em;
+    font-family: system-ui;
+    font-size: 0.6em;
+    margin-inline-start: 0.4em;
+    vertical-align: 0.5em;
+  }
+  .highlight__link:hover::after {
+    color: var(--color-accent);
   }
 
   .section {

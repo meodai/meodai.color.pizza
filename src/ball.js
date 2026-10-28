@@ -16,8 +16,8 @@ const NARROW = 0.1;
 const COVER = 0.75;
 const EDGE = 1 - 2 * COVER;
 const RIM = Math.acos(EDGE) / Math.PI;
-const LABEL = 128;
-const LABEL_SPAN = 0.6;
+const LABEL = 256;
+const LABEL_SPAN = Math.sqrt(1 - EDGE * EDGE);
 const TURN = 2000;
 const TILT = 2400;
 const FRICTION = 0.9;
@@ -31,8 +31,6 @@ const sphere = document.createElement("canvas");
 const shadow = document.createElement("div");
 const handle = document.createElement("button");
 const dock = document.createElement("div");
-const icon = document.createElement("canvas");
-icon.width = icon.height = 64;
 trail.className = "ball__trail";
 sphere.className = "ball__sphere";
 shadow.className = "ball__shadow";
@@ -77,6 +75,7 @@ const BALL_FRAGMENT = `#version 300 es
   uniform mat3 orient;
   uniform vec3 paint;
   uniform vec3 paper;
+  uniform vec3 mark;
   uniform float extent;
   uniform vec3 lamp;
   ${LETTER}
@@ -91,7 +90,7 @@ const BALL_FRAGMENT = `#version 300 es
     vec3 body = orient * n;
     float t = acos(clamp(-body.z, -1.0, 1.0)) / ${number(Math.PI)};
     vec3 tint = mix(paint, paper, smoothstep(${number(RIM - 0.005)}, ${number(RIM)}, t));
-    tint = mix(tint, paint, letter(body));
+    tint = mix(tint, mark, letter(body));
     float light = 0.4 + 0.75 * max(0.0, dot(n, lamp));
     float glow =
       pow(max(0.0, dot(n, normalize(lamp - vec3(0.0, 0.0, 1.0)))), 48.0) * 0.6 +
@@ -202,11 +201,9 @@ const PRINT_FRAGMENT = `#version 300 es
 let radius = 0;
 let pixelRatio = 1;
 let label = null;
-let base = [0, 0, 0];
-let accent = [1, 0, 0];
-let tone = 0;
 let paint = [0, 0, 0];
 let paper = [1, 1, 1];
+let mark = [0, 0, 0];
 let ink = [0, 0, 0];
 let drawn = null;
 let band = null;
@@ -236,9 +233,6 @@ let points = [];
 let splashes = [];
 let prints = [];
 let stroke = 0;
-let iconTime = -Infinity;
-let iconBusy = false;
-let iconStale = false;
 let tilt = null;
 let level = null;
 let last = 0;
@@ -272,16 +266,28 @@ function readColor(color) {
 }
 
 async function buildLabel() {
-  const family = getComputedStyle(document.body).fontFamily;
-  const size = LABEL * 0.6;
-  await document.fonts.load(`${size}px ${family}`, "DA");
+  const drawing = document.querySelector(".portrait__drawing")?.cloneNode(true);
+  if (!drawing) return;
+  drawing.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+  drawing.setAttribute("width", LABEL);
+  drawing.setAttribute("height", LABEL);
+  drawing.setAttribute("style", "color:#000;fill:none;stroke-linecap:round;stroke-linejoin:round");
+  for (const shade of drawing.querySelectorAll(".portrait__shade")) {
+    shade.setAttribute("fill", "currentColor");
+    shade.setAttribute("opacity", "0.1");
+  }
+  for (const tone of drawing.querySelectorAll(".portrait__tone"))
+    tone.setAttribute("opacity", "0.45");
+  const image = new Image();
+  image.src = `data:image/svg+xml,${encodeURIComponent(new XMLSerializer().serializeToString(drawing))}`;
+  await image.decode();
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = LABEL;
   const context = canvas.getContext("2d");
-  context.font = `${size}px ${family}`;
-  context.textAlign = "center";
-  const { actualBoundingBoxAscent } = context.measureText("DA");
-  context.fillText("DA", LABEL / 2, (LABEL + actualBoundingBoxAscent) / 2);
+  context.beginPath();
+  context.arc(LABEL / 2, LABEL / 2, LABEL / 2, 0, Math.PI * 2);
+  context.clip();
+  context.drawImage(image, 0, 0, LABEL, LABEL);
   label = canvas;
   ball.label = texture(sphereGl, label, ball.label);
   floor.label = texture(trailGl, label, floor.label);
@@ -292,24 +298,10 @@ async function buildLabel() {
 function buildColors() {
   paper = readColor(getComputedStyle(document.body).backgroundColor);
   const root = getComputedStyle(document.documentElement);
-  base = readColor(root.getPropertyValue("--color-ink"));
-  accent = readColor(root.getPropertyValue("--color-accent"));
-  mixPaint();
-  drawn = null;
-}
-
-function mixPaint() {
-  paint = base.map((v, i) => v + (accent[i] - v) * tone);
+  paint = readColor(root.getPropertyValue("--color-accent"));
   ink = paint.map(toGamma);
-}
-
-function blend(dt) {
-  const root = document.documentElement;
-  const goal = scrollY + innerHeight >= root.scrollHeight - 2 ? 1 : 0;
-  if (tone === goal) return true;
-  tone = Math.abs(goal - tone) < 0.01 ? goal : tone + (goal - tone) * (1 - Math.exp(-dt / 0.15));
-  mixPaint();
-  return false;
+  mark = dark.matches ? [1, 1, 1] : paint;
+  drawn = null;
 }
 
 function compile(gl, vertex, fragment, names) {
@@ -390,6 +382,7 @@ function setupBall() {
         "orient",
         "paint",
         "paper",
+        "mark",
         "extent",
         "lamp",
         "label",
@@ -565,7 +558,7 @@ function axes() {
 }
 
 function paintSphere() {
-  const key = `${rotation.join()},${height},${lamp.join()},${tone}`;
+  const key = `${rotation.join()},${height},${lamp.join()}`;
   if (key === drawn || sphereGl.isContextLost()) return;
   drawn = key;
   const gl = sphereGl;
@@ -578,6 +571,7 @@ function paintSphere() {
   gl.uniformMatrix3fv(uniforms.orient, false, axes());
   gl.uniform3fv(uniforms.paint, paint);
   gl.uniform3fv(uniforms.paper, paper);
+  gl.uniform3fv(uniforms.mark, mark);
   gl.uniform1f(uniforms.extent, sphere.width / 2);
   gl.uniform3fv(uniforms.lamp, lamp);
   gl.activeTexture(gl.TEXTURE0);
@@ -633,32 +627,8 @@ function press(now, ground) {
     direction: [ground[0] / speed, ground[1] / speed],
     along: Math.min(Math.max(1.5, speed / 60), 6) / 2 + 0.4,
     orient,
-    color: ink,
+    color: mark.map(toGamma),
     time: now,
-  });
-}
-
-function paintIcon(now, force) {
-  if (!force && !hovering.matches) return;
-  if (iconBusy) iconStale ||= force;
-  if (iconBusy || (!force && now - iconTime < 250)) return;
-  const link = document.querySelector('link[rel="icon"]');
-  if (!link) return;
-  iconTime = now;
-  iconBusy = true;
-  const context = icon.getContext("2d");
-  context.clearRect(0, 0, icon.width, icon.height);
-  context.drawImage(sphere, 0, 0, icon.width, icon.height);
-  icon.toBlob((blob) => {
-    iconBusy = false;
-    if (!blob) return;
-    if (link.href.startsWith("blob:")) URL.revokeObjectURL(link.href);
-    link.type = "image/png";
-    link.href = URL.createObjectURL(blob);
-    if (iconStale) {
-      iconStale = false;
-      paintIcon(performance.now(), true);
-    }
   });
 }
 
@@ -816,18 +786,12 @@ function step(now) {
   prints = prints.filter((print) => now - print.time < TRAIL_LIFE);
 
   const lit = aim(dt);
-  const toned = blend(dt);
   paintTrail(now);
   paintSphere();
   place();
 
   const resting =
-    lit &&
-    toned &&
-    height === 0 &&
-    speed < 0.5 &&
-    Math.hypot(tx - position[0], ty - position[1]) < 0.5;
-  paintIcon(now, resting);
+    lit && height === 0 && speed < 0.5 && Math.hypot(tx - position[0], ty - position[1]) < 0.5;
   frame =
     resting && !points.length && !splashes.length && !prints.length
       ? 0

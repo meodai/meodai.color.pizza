@@ -28,7 +28,7 @@ npm run deploy   # build and publish with Wrangler
   those, and the rest follows. Every neutral comes from one six-step ramp from paper to ink:
   hairlines are the step next to the paper, muted text the step closest to the paper that
   still reads at 4.5:1, and ink and selected text the steps with the best contrast.
-- The portrait in `index.html` is a hand-traced SVG line drawing.
+- The portrait in `index.html` is an inline black and white SVG drawing that follows `--color-ink`.
 - Titles and text use [Libre Caslon Condensed](https://github.com/ertekinno/libre-caslon-condensed),
   subset to Latin, under the SIL Open Font License (`src/fonts/LibreCaslonCondensed-OFL.txt`).
 - `src/projects.js` is a parked draft for a fuller project list; nothing renders it yet.
