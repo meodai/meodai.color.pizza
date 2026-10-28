@@ -175,6 +175,26 @@
     text-decoration-thickness: 1px;
     text-underline-offset: 0.1875rem;
   }
+  .link__icon {
+    display: inline-block;
+    block-size: 1.1em;
+    aspect-ratio: 130 / 158;
+    margin-inline-start: 0.25em;
+    vertical-align: -0.2em;
+    transition: scale 0.2s;
+  }
+  .link:not(:hover, :focus-visible) .link__icon {
+    scale: 0.8;
+  }
+  .link__icon > * {
+    transition: fill 0.2s;
+  }
+  .link:not(:hover, :focus-visible) .link__icon > path {
+    fill: var(--color-accent);
+  }
+  .link:not(:hover, :focus-visible) .link__icon > circle {
+    fill: var(--color-paper);
+  }
   .link:hover,
   .intro__link:hover,
   .highlight__link:hover {
