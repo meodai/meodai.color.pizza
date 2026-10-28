@@ -213,6 +213,9 @@ let radius = 0;
 let pixelRatio = 1;
 let label = null;
 let initials = null;
+let accent = [0, 0, 1];
+let base = [0, 0, 0];
+let tone = 0;
 let paint = [0, 0, 0];
 let paper = [1, 1, 1];
 let mark = [0, 0, 0];
@@ -328,10 +331,25 @@ async function buildInitials() {
 function buildColors() {
   paper = readColor(getComputedStyle(document.body).backgroundColor);
   const root = getComputedStyle(document.documentElement);
-  paint = readColor(root.getPropertyValue("--color-accent"));
-  ink = paint.map(toGamma);
-  mark = dark.matches ? [1, 1, 1] : paint;
+  accent = readColor(root.getPropertyValue("--color-accent"));
+  base = readColor(root.getPropertyValue("--color-ink"));
+  mixPaint();
   drawn = null;
+}
+
+function mixPaint() {
+  paint = accent.map((v, i) => v + (base[i] - v) * tone);
+  ink = paint.map(toGamma);
+  mark = dark.matches ? WHITE : paint;
+}
+
+function blend(dt) {
+  const root = document.documentElement;
+  const goal = scrollY + innerHeight >= root.scrollHeight - 2 ? 1 : 0;
+  if (tone === goal) return true;
+  tone = Math.abs(goal - tone) < 0.01 ? goal : tone + (goal - tone) * (1 - Math.exp(-dt / 0.15));
+  mixPaint();
+  return false;
 }
 
 function compile(gl, vertex, fragment, names) {
@@ -598,7 +616,7 @@ function axes() {
 }
 
 function paintSphere() {
-  const key = `${rotation.join()},${height},${lamp.join()}`;
+  const key = `${rotation.join()},${height},${lamp.join()},${tone}`;
   if (key === drawn || sphereGl.isContextLost()) return;
   drawn = key;
   const gl = sphereGl;
@@ -831,12 +849,17 @@ function step(now) {
   prints = prints.filter((print) => now - print.time < TRAIL_LIFE);
 
   const lit = aim(dt);
+  const toned = blend(dt);
   paintTrail(now);
   paintSphere();
   place();
 
   const resting =
-    lit && height === 0 && speed < 0.5 && Math.hypot(tx - position[0], ty - position[1]) < 0.5;
+    lit &&
+    toned &&
+    height === 0 &&
+    speed < 0.5 &&
+    Math.hypot(tx - position[0], ty - position[1]) < 0.5;
   frame =
     resting && !points.length && !splashes.length && !prints.length
       ? 0
