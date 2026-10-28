@@ -1,3 +1,5 @@
+import portrait from "./portrait.svg?url";
+
 const moving = matchMedia("(prefers-reduced-motion: no-preference)");
 const hovering = matchMedia("(hover: hover) and (pointer: fine)");
 const narrow = matchMedia("(max-width: 48.75em)");
@@ -281,21 +283,8 @@ function readColor(color) {
 }
 
 async function buildLabel() {
-  const drawing = document.querySelector(".portrait__drawing")?.cloneNode(true);
-  if (!drawing) return;
-  drawing.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-  drawing.setAttribute("width", LABEL);
-  drawing.setAttribute("height", LABEL);
-  drawing.setAttribute("style", "color:#000;fill:none;stroke-linecap:round;stroke-linejoin:round");
-  for (const shade of drawing.querySelectorAll(".portrait__shade")) {
-    shade.setAttribute("fill", "currentColor");
-    shade.setAttribute("opacity", "0.1");
-  }
-  for (const tone of drawing.querySelectorAll(".portrait__tone"))
-    tone.setAttribute("opacity", "0.45");
-  for (const dash of drawing.querySelectorAll(".portrait__dash")) dash.remove();
-  const image = new Image();
-  image.src = `data:image/svg+xml,${encodeURIComponent(new XMLSerializer().serializeToString(drawing))}`;
+  const image = new Image(LABEL, LABEL);
+  image.src = portrait;
   await image.decode();
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = LABEL;
