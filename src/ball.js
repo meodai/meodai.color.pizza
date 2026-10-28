@@ -103,7 +103,7 @@ const BALL_FRAGMENT = `#version 300 es
     tint = mix(tint, vec3(1.0), initial(body));
     float light = 0.4 + 0.75 * max(0.0, dot(n, lamp));
     float glow =
-      pow(max(0.0, dot(n, normalize(lamp - vec3(0.0, 0.0, 1.0)))), 48.0) * 0.6 +
+      pow(max(0.0, dot(n, normalize(lamp - vec3(0.0, 0.0, 1.0)))), 12.0) * 0.15 +
       pow(1.0 + n.z, 3.0) * 0.15;
     float alpha = min(1.0, (1.0 - sqrt(d)) * extent * 1.5);
     color = vec4(toGamma(min(tint * light + glow, 1.0)) * alpha, alpha);
