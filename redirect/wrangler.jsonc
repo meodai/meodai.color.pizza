@@ -1,0 +1,6 @@
+{
+  "name": "david-redirect",
+  "main": "index.js",
+  "compatibility_date": "2026-10-01",
+  "routes": [{ "pattern": "david.color.pizza", "custom_domain": true }],
+}
