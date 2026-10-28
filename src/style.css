@@ -211,6 +211,7 @@
   }
   .portrait__eye {
     fill: var(--color-accent);
+    transition: translate 0.25s ease-out;
   }
   @media (prefers-color-scheme: dark) {
     .portrait__drawing {
