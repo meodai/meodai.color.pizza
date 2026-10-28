@@ -456,6 +456,43 @@
   .shell:has(> .ball__trail) .shell__intro {
     z-index: -2;
   }
+  .cover {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    overflow: hidden;
+    color: #fff;
+    font: calc(3rem * 0.36) / 1 var(--font);
+    pointer-events: none;
+  }
+  .cover__disc {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    inline-size: 150vmax;
+    block-size: 150vmax;
+    margin: -75vmax 0 0 -75vmax;
+    border-radius: 50%;
+    background: var(--cover-light, var(--color-accent));
+  }
+  .cover__initials,
+  .cover__name {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    visibility: hidden;
+    white-space: pre;
+    text-box: trim-both cap alphabetic;
+  }
+  .cover__letter {
+    display: inline-block;
+  }
+  @media (prefers-color-scheme: dark) {
+    .cover__disc {
+      background: var(--cover-dark, var(--color-underline));
+    }
+  }
+
   .ball__sphere {
     position: fixed;
     inset-block-start: 0;

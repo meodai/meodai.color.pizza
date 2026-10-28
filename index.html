@@ -30,8 +30,49 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@meodai" />
     <link rel="stylesheet" href="/src/style.css" />
+    <noscript
+      ><style>
+        .cover {
+          display: none;
+        }
+      </style></noscript
+    >
+    <script>
+      (() => {
+        const params = new URLSearchParams(location.search);
+        const hex = (name) => {
+          const value = params.get(name);
+          return /^([0-9a-f]{3}){1,2}$/i.test(value ?? "") ? `#${value}` : null;
+        };
+        const light = hex("cl") ?? hex("cd");
+        if (!light) return;
+        const dark = hex("cd") ?? light;
+        const digits =
+          dark.length === 4 ? [...dark.slice(1)].map((c) => c + c) : dark.slice(1).match(/../g);
+        const [r, g, b] = digits.map((c) => {
+          const v = parseInt(c, 16) / 255;
+          return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+        });
+        const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        document.documentElement.style.setProperty("--cover-light", light);
+        document.documentElement.style.setProperty(
+          "--cover-dark",
+          luminance > 0.179 ? "#fff" : "#000",
+        );
+      })();
+    </script>
   </head>
   <body>
+    <div class="cover" aria-hidden="true">
+      <div class="cover__disc"></div>
+      <span class="cover__initials"
+        ><span class="cover__letter">D</span><span class="cover__letter">A</span></span
+      >
+      <span class="cover__name"
+        ><span class="cover__letter">D</span><span class="cover__rest">avid </span
+        ><span class="cover__letter">A</span><span class="cover__rest">erne</span></span
+      >
+    </div>
     <a class="skip-link" href="#main">Skip to content</a>
     <div class="shell">
       <aside class="shell__intro intro" aria-label="Introduction">
@@ -496,5 +537,6 @@
     <script type="module" src="/src/reel.js"></script>
     <script type="module" src="/src/ball.js"></script>
     <script type="module" src="/src/eyes.js"></script>
+    <script type="module" src="/src/cover.js"></script>
   </body>
 </html>
