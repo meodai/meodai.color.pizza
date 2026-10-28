@@ -166,7 +166,7 @@
 
   .link {
     text-decoration: underline;
-    text-decoration-color: var(--color-rule);
+    text-decoration-color: var(--color-accent);
     text-decoration-thickness: 1px;
     text-underline-offset: 0.1875rem;
   }
