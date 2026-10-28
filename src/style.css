@@ -81,6 +81,11 @@
   html {
     scrollbar-color: var(--color-accent) var(--color-paper);
   }
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
   body {
     background: var(--color-paper);
     color: var(--color-ink);
