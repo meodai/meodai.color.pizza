@@ -16,6 +16,9 @@ const WIDE = 1.1;
 const SWELL = 0.8;
 const NARROW = 0.1;
 const CAP_HEIGHT = 1523 / 2000;
+const UNWIND = 4;
+const GROW = 3;
+const KEEP = 20;
 const COVER = 0.75;
 const EDGE = 1 - 2 * COVER;
 const RIM = Math.acos(EDGE) / Math.PI;
@@ -203,16 +206,19 @@ const PRINT_FRAGMENT = `#version 300 es
   flat in vec3 vTint;
   out vec4 color;
   uniform float radius;
+  uniform bool cut;
   ${LETTER}
   void main() {
     vec2 at = ground / radius;
     vec3 body = normalize(vX * at.x + vY * at.y + vZ);
-    float a = max(letter(body), initial(body)) * vFade;
+    float a = (cut ? initial(body) : letter(body)) * vFade;
     if (a <= 0.0) discard;
     color = vec4(vTint * a, a);
   }`;
 
 let radius = 0;
+let unit = 0;
+let grow = 1;
 let pixelRatio = 1;
 let label = null;
 let initials = null;
@@ -228,6 +234,8 @@ let band = null;
 let bandWidth = 0;
 let bandHeight = 0;
 let pageHeight = 0;
+let runout = 0;
+let deepest = 0;
 let nudge = 0;
 let ball = null;
 let floor = null;
@@ -255,6 +263,10 @@ let tilt = null;
 let level = null;
 let last = 0;
 let lastScroll = 0;
+let depth = 0;
+let plunge = 0;
+let unwind = 0;
+let swipe = null;
 let frame = 0;
 
 function normalize([x, y, z]) {
@@ -459,6 +471,7 @@ function setupFloor() {
         "radius",
         "label",
         "initials",
+        "cut",
       ]),
       [
         ["center", 2],
@@ -582,8 +595,10 @@ function capCenter(element) {
 
 function resize() {
   pixelRatio = devicePixelRatio || 1;
-  radius = sphere.offsetWidth / 2;
+  unit = sphere.offsetWidth / 2;
+  radius = unit * grow;
   pageHeight = Math.max(document.body.offsetHeight, innerHeight);
+  runout = document.querySelector(".runout")?.offsetHeight ?? 0;
   const name = document.querySelector(".intro__name");
   nudge = name ? center(name) - capCenter(name) : 0;
   const width = document.documentElement.clientWidth;
@@ -597,18 +612,50 @@ function resize() {
     trail.style.height = `${height}px`;
   }
   band = null;
-  const size = Math.ceil(radius * 2 * pixelRatio);
+  const size = Math.ceil(unit * 2 * GROW * pixelRatio);
   if (sphere.width !== size) {
     sphere.width = sphere.height = size;
     drawn = null;
   }
 }
 
+function lasting({ y, expired }) {
+  return runout > 0 && !expired && y >= pageHeight - runout;
+}
+
+function retire(now) {
+  deepest = Math.max(deepest, position[1]);
+  const limit = deepest - KEEP * innerHeight;
+  for (const items of [points, splashes, prints]) {
+    for (const item of items) {
+      if (item.y >= limit || !lasting(item)) continue;
+      item.expired = true;
+      item.time = now;
+    }
+  }
+}
+
+function life(item, now) {
+  return lasting(item) ? 1 : 1 - (now - item.time) / TRAIL_LIFE;
+}
+
+function swell() {
+  grow = 1 + (GROW - 1) * (1 - Math.exp(-overrun() / (innerHeight * 4)));
+  radius = unit * grow;
+}
+
+function camera() {
+  return scrollY + depth;
+}
+
 function slide() {
-  if (band !== null && scrollY >= band && scrollY + innerHeight <= band + bandHeight) return;
-  const centered = scrollY - (bandHeight - innerHeight) / 2;
-  band = Math.min(Math.max(centered, 0), Math.max(0, pageHeight - bandHeight));
-  trail.style.translate = `0 ${band}px`;
+  const view = camera();
+  const limit = Math.max(0, pageHeight - bandHeight) + depth;
+  if (band === null || band > limit || view < band || view + innerHeight > band + bandHeight) {
+    const centered = view - (bandHeight - innerHeight) / 2;
+    band = Math.min(Math.max(centered, 0), limit);
+  }
+  trail.style.translate = `0 ${band - depth}px`;
 }
 
 function axes() {
@@ -648,17 +695,18 @@ function paintSphere() {
 
 function place() {
   const x = position[0];
-  const y = position[1] - scrollY;
+  const y = position[1] - camera();
   const reach = shadow.offsetWidth / 2;
-  sphere.style.translate = `${x - radius}px ${y - radius}px`;
-  sphere.style.scale = 1 + height / 500;
+  sphere.style.translate = `${x - unit}px ${y - unit}px`;
+  sphere.style.scale = (1 + height / 500) * grow;
   const slant = Math.min(1.6, Math.hypot(lamp[0], lamp[1]) / Math.max(-lamp[2], 0.01));
   const angle = Math.atan2(-lamp[1], -lamp[0]);
   const cast = slant * (radius * 0.55 + height * 0.7);
   shadow.style.translate = `${x - reach + Math.cos(angle) * cast}px ${y - reach + Math.sin(angle) * cast}px`;
-  shadow.style.scale = 1 + (height * 0.25) / reach;
+  shadow.style.scale = (1 + (height * 0.25) / reach) * grow;
   shadow.style.opacity = 1 / (1 + height / 70);
-  handle.style.translate = `${x - radius}px ${y - radius}px`;
+  handle.style.translate = `${x - unit}px ${y - unit}px`;
+  handle.style.scale = grow;
   const [dockX, dockY] = corner();
   const dockRadius = dock.offsetWidth / 2;
   dock.style.translate = `${dockX - dockRadius}px ${dockY - dockRadius}px`;
@@ -686,11 +734,14 @@ function press(now, ground) {
   const speed = Math.hypot(...ground);
   if (!label || !initials || speed < 1) return;
   const orient = axes();
+  const last = prints.at(-1);
+  const travelled = last ? Math.hypot(position[0] - last.x, position[1] - last.y) : 0;
+  const reach = travelled < radius ? travelled : Math.min(Math.max(1.5, speed / 60), 6);
   prints.push({
     x: position[0],
     y: position[1],
     direction: [ground[0] / speed, ground[1] / speed],
-    along: Math.min(Math.max(1.5, speed / 60), 6) / 2 + 0.4,
+    along: reach / 2 + 0.4,
     orient,
     color: (orient[8] < 0 ? WHITE : mark).map(toGamma),
     time: now,
@@ -712,7 +763,7 @@ function paintTrail(now) {
     const b = points[i];
     const from = a && !b.gap ? a : b;
     if (Math.max(from.y, b.y) < top || Math.min(from.y, b.y) > bottom) continue;
-    const fade = Math.sqrt(1 - (now - b.time) / TRAIL_LIFE);
+    const fade = Math.sqrt(life(b, now));
     const spacing = Math.max(1.5, Math.min(from.width, b.width) * fade * 0.25);
     const steps = Math.max(1, Math.ceil(Math.hypot(b.x - from.x, b.y - from.y) / spacing));
     for (let s = 1; s <= steps; s++) {
@@ -749,10 +800,11 @@ function paintTrail(now) {
     gl.uniform1f(uniforms.scroll, band);
     gl.uniform1i(uniforms.sprite, 0);
     gl.activeTexture(gl.TEXTURE0);
-    for (const { x, y, texture, size, time } of visible) {
+    for (const item of visible) {
+      const { x, y, texture, size } = item;
       gl.bindTexture(gl.TEXTURE_2D, texture);
       gl.uniform4f(uniforms.rect, x, y, size, size);
-      gl.uniform1f(uniforms.alpha, 1 - (now - time) / TRAIL_LIFE);
+      gl.uniform1f(uniforms.alpha, life(item, now));
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     }
   }
@@ -761,9 +813,10 @@ function paintTrail(now) {
     if (printData.length < pressed.length * PRINT_SIZE) {
       printData = new Float32Array(pressed.length * PRINT_SIZE * 2);
     }
-    pressed.forEach(({ x, y, direction, along, orient, color, time }, i) => {
+    pressed.forEach((item, i) => {
+      const { x, y, direction, along, orient, color } = item;
       printData.set(
-        [x, y, ...direction, along, 1 - (now - time) / TRAIL_LIFE, ...orient, ...color],
+        [x, y, ...direction, along, life(item, now), ...orient, ...color],
         i * PRINT_SIZE,
       );
     });
@@ -786,22 +839,31 @@ function paintTrail(now) {
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, floor.initials);
     gl.uniform1i(uniforms.initials, 1);
+    gl.uniform1i(uniforms.cut, 0);
     gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, pressed.length);
+    gl.blendFunc(gl.ZERO, gl.ONE_MINUS_SRC_ALPHA);
+    gl.uniform1i(uniforms.cut, 1);
+    gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, pressed.length);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
   }
 }
 
 function step(now) {
   const dt = Math.min((now - last) / 1000, 1 / 30);
   last = now;
-  const shift = scrollY - lastScroll;
-  lastScroll = scrollY;
+  const climbing = plunge < depth;
+  depth =
+    Math.abs(plunge - depth) < 0.5 ? plunge : depth + (plunge - depth) * (1 - Math.exp(-dt / 0.12));
+  swell();
+  const shift = camera() - lastScroll;
+  lastScroll = camera();
   const jumped = parked && Math.abs(shift) > innerHeight / 2;
   const carried = parked && !jumped && dt > 0 ? shift / dt : 0;
   if (parked) position = [position[0], position[1] + shift];
 
   if (parked) target = corner(focused());
   else homing();
-  const [tx, ty] = target ? [target[0], target[1] + scrollY] : position;
+  const [tx, ty] = target ? [target[0], target[1] + camera()] : position;
   const grounded = height === 0;
   if (grounded) {
     const ax = tilt
@@ -829,7 +891,8 @@ function step(now) {
   const previous = points.at(-1);
   if (height === 0) {
     const gap = jumped || !grounded || !previous || previous.lifted;
-    const goal = radius * (THIN + (WIDE - THIN) * Math.exp(-speed / 200));
+    const pace = climbing && unwind ? speed / unwind : speed;
+    const goal = radius * (THIN + (WIDE - THIN) * Math.exp(-pace / 200));
     if (gap) stroke = radius * THIN;
     const ease = goal > stroke ? SWELL : NARROW;
     stroke += (goal - stroke) * (1 - Math.exp(-dt / ease));
@@ -845,13 +908,20 @@ function step(now) {
   } else if (previous) {
     previous.lifted = true;
   }
-  points = points.filter((point) => now - point.time < TRAIL_LIFE);
+  retire(now);
+  let broken = false;
+  points = points.filter((point) => {
+    if (life(point, now) <= 0) return !(broken = true);
+    if (broken) point.gap = true;
+    broken = false;
+    return true;
+  });
   splashes = splashes.filter((splash) => {
-    const alive = now - splash.time < TRAIL_LIFE;
+    const alive = life(splash, now) > 0;
     if (!alive) trailGl.deleteTexture(splash.texture);
     return alive;
   });
-  prints = prints.filter((print) => now - print.time < TRAIL_LIFE);
+  prints = prints.filter((print) => life(print, now) > 0);
 
   const lit = aim(dt);
   const toned = blend(dt);
@@ -860,20 +930,21 @@ function step(now) {
   place();
 
   const resting =
+    depth === plunge &&
     lit &&
     toned &&
     height === 0 &&
     speed < 0.5 &&
     Math.hypot(tx - position[0], ty - position[1]) < 0.5;
   frame =
-    resting && !points.length && !splashes.length && !prints.length
+    resting && [points, splashes, prints].every((items) => items.every(lasting))
       ? 0
       : requestAnimationFrame(step);
 }
 
 function aim(dt) {
   const goal = glare
-    ? normalize([(glare[0] - position[0]) / LAMP, (glare[1] - position[1] + scrollY) / LAMP, -1])
+    ? normalize([(glare[0] - position[0]) / LAMP, (glare[1] - position[1] + camera()) / LAMP, -1])
     : LIGHT;
   if (Math.hypot(...goal.map((v, i) => v - lamp[i])) < 0.002) {
     lamp = goal;
@@ -900,7 +971,7 @@ function turn(ax, ay, now) {
 function bounce(now) {
   const walls = [
     [0, radius, innerWidth - radius],
-    [1, scrollY + radius, scrollY + innerHeight - radius],
+    [1, camera() + radius, camera() + innerHeight - radius],
   ];
   for (const [axis, min, max] of walls) {
     const side = position[axis] < min ? -1 : position[axis] > max ? 1 : 0;
@@ -972,15 +1043,15 @@ function focused() {
 function groove() {
   const intro = document.querySelector(".shell__intro")?.getBoundingClientRect();
   const content = document.querySelector(".shell__content")?.getBoundingClientRect();
-  if (!intro || !content || content.left - intro.right < radius * 2) return null;
+  if (!intro || !content || content.left - intro.right < unit * 2) return null;
   return intro.right;
 }
 
 function corner(highlight = null) {
-  const inset = radius * 2.5;
+  const inset = unit * 2.5;
   const floor = document.documentElement.clientHeight - inset;
   const lane = narrow.matches ? null : groove();
-  const x = narrow.matches ? radius * 1.25 : (lane ?? document.documentElement.clientWidth - inset);
+  const x = narrow.matches ? unit * 1.25 : (lane ?? document.documentElement.clientWidth - inset);
   if (highlight) {
     const { top, bottom } = highlight.getBoundingClientRect();
     return [x, Math.min(Math.max((top + bottom) / 2, inset), floor)];
@@ -988,14 +1059,34 @@ function corner(highlight = null) {
   const title =
     (lane || narrow.matches) && document.querySelector(".intro__name")?.getBoundingClientRect();
   if (!title) return [x, floor];
-  const scrolled = scrollY / Math.max(1, pageHeight - innerHeight);
+  const end = Math.max(1, pageHeight - runout - innerHeight);
+  const scrolled = Math.min(Math.max(scrollY / end, 0), 1);
   const start = (title.top + title.bottom) / 2 - nudge + (narrow.matches ? scrollY : 0);
-  return [x, start + (floor - start) * Math.min(Math.max(scrolled, 0), 1)];
+  const y = start + (floor - start) * scrolled;
+  if (!runout) return [x, y];
+  const past = Math.min(Math.max((scrollY - end) / runout, 0), 1);
+  return [ski(x), y + (innerHeight - runout / 2 - y) * past];
+}
+
+function overrun() {
+  if (!runout) return 0;
+  return Math.max(0, scrollY - (pageHeight - runout - innerHeight)) + depth;
+}
+
+function ski(x) {
+  const run = overrun();
+  if (!run) return x;
+  const width = document.documentElement.clientWidth;
+  const ease = Math.min(run / (runout + innerHeight), 1);
+  const noise =
+    Math.sin(run / 310) * 0.5 + Math.sin(run / 170 + 1.7) * 0.3 + Math.sin(run / 530 + 4.1) * 0.2;
+  const drift = x + (width / 2 - x) * ease + noise * width * 0.3 * ease;
+  return Math.min(Math.max(drift, radius * 1.5), width - radius * 1.5);
 }
 
 function homing() {
   const [x, y] = corner();
-  const distance = Math.hypot(position[0] - x, position[1] - scrollY - y);
+  const distance = Math.hypot(position[0] - x, position[1] - camera() - y);
   if (distance > radius * 3) armed = true;
   if (armed && height === 0 && distance < radius * 0.5) park();
 }
@@ -1033,6 +1124,29 @@ function follow(event) {
   }
   target = [event.clientX, event.clientY];
   wake();
+}
+
+function bottomed() {
+  return scrollY + innerHeight >= document.documentElement.scrollHeight - 2;
+}
+
+function travel(distance, event) {
+  if (!bottomed() || (distance <= 0 && !depth)) return;
+  if (event.cancelable) event.preventDefault();
+  if (distance > 0) unwind = 0;
+  else unwind ||= Math.max(UNWIND, plunge / (2 * innerHeight));
+  plunge = Math.max(0, plunge + (distance < 0 ? distance * unwind : distance));
+  wake();
+}
+
+function dive(event) {
+  travel(event.deltaY * (event.deltaMode === 1 ? 16 : 1), event);
+}
+
+function drag(event) {
+  const y = event.touches[0].clientY;
+  if (event.type === "touchmove" && swipe !== null) travel(swipe - y, event);
+  swipe = y;
 }
 
 function touch(event) {
@@ -1074,8 +1188,8 @@ function start() {
   buildLabel();
   buildInitials();
   const [x, y] = corner(focused());
-  position = [x, y + scrollY];
-  lastScroll = scrollY;
+  position = [x, y + camera()];
+  lastScroll = camera();
   paintSphere();
   place();
   wake();
@@ -1092,6 +1206,9 @@ function start() {
   addEventListener("pointerdown", jump, { passive: true });
   addEventListener("touchstart", touch, { passive: true });
   addEventListener("touchmove", touch, { passive: true });
+  addEventListener("wheel", dive, { passive: false });
+  addEventListener("touchstart", drag, { passive: true });
+  addEventListener("touchmove", drag, { passive: false });
   addEventListener("scroll", () => position && wake(), { passive: true });
   addEventListener("load", wake);
   document.fonts.ready.then(() => {
@@ -1106,7 +1223,7 @@ function start() {
     resize();
     if (parked && height === 0) {
       const [x, y] = corner(focused());
-      position = [x, y + scrollY];
+      position = [x, y + camera()];
       velocity = [0, 0];
     }
     wake();

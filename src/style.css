@@ -82,6 +82,7 @@
 @layer base {
   html {
     scrollbar-color: var(--color-accent) var(--color-paper);
+    overscroll-behavior-y: none;
   }
   @media (prefers-reduced-motion: no-preference) {
     html {
@@ -138,6 +139,11 @@
           var(--cap-height) * (var(--name-size) - var(--text)) / 2
       );
     }
+  }
+
+  .runout {
+    grid-column: 1 / -1;
+    block-size: 100dvh;
   }
 
   @media (max-height: 35em) and (min-width: 48.8125em) {
