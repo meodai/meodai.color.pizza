@@ -321,7 +321,7 @@ async function buildInitials() {
 function buildColors() {
   paper = readColor(getComputedStyle(document.body).backgroundColor);
   const root = getComputedStyle(document.documentElement);
-  accent = readColor(root.getPropertyValue("--color-accent"));
+  accent = readColor(root.getPropertyValue(dark.matches ? "--color-underline" : "--color-accent"));
   base = readColor(root.getPropertyValue("--color-ink"));
   mixPaint();
   drawn = null;

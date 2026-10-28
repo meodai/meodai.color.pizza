@@ -16,6 +16,7 @@ const system = layer("system", (book) => {
   base.set("paper", color("#f7f7f7"));
   base.set("ink", color("#303030"));
   base.set("accent", color("#0000ee"));
+  base.set("underline", ref("base.accent"));
 
   const tone = book.addScope("tone");
   for (let step = 0; step < steps; step++) {
@@ -32,6 +33,7 @@ const system = layer("system", (book) => {
   ui.set("paper", nth(tone, 0));
   ui.set("ink", bestContrastWith(ref("color.paper"), tone));
   ui.set("accent", ref("base.accent"));
+  ui.set("underline", ref("base.underline"));
   ui.set(
     "muted",
     closestColor(ref("color.paper"), tone, { readableOn: ref("color.paper"), minContrast: 4.5 }),
@@ -42,9 +44,10 @@ const system = layer("system", (book) => {
 
 const dark = layer("dark", {
   base: {
-    paper: color("#161616"),
-    ink: color("#e8e8e8"),
-    accent: color("#0066ff"),
+    paper: color("#0000ee"),
+    ink: color("#f7f7f7"),
+    accent: color("#ffffff"),
+    underline: color("#000000"),
   },
 });
 

@@ -166,7 +166,7 @@
 
   .link {
     text-decoration: underline;
-    text-decoration-color: var(--color-accent);
+    text-decoration-color: var(--color-underline);
     text-decoration-thickness: 1px;
     text-underline-offset: 0.1875rem;
   }
@@ -174,7 +174,7 @@
   .intro__link:hover,
   .highlight__link:hover {
     text-decoration: underline;
-    text-decoration-color: var(--color-accent);
+    text-decoration-color: var(--color-underline);
     text-decoration-thickness: 2px;
     text-underline-offset: 0.1875rem;
   }
