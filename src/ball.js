@@ -1093,10 +1093,11 @@ function start() {
     }
     wake();
   });
-  dark.addEventListener("change", () => {
-    buildColors();
-    wake();
-  });
+  for (const target of [dark, window])
+    target.addEventListener(target === dark ? "change" : "themechange", () => {
+      buildColors();
+      wake();
+    });
   for (const [canvas, setup] of [
     [sphere, setupBall],
     [trail, setupFloor],
