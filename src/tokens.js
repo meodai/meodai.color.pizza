@@ -59,10 +59,22 @@ const dark = (paper) =>
     base.set("underline", bestContrastWith(ref("base.accent"), extreme));
   });
 
+const plainMuted = layer("plain-muted", { color: { muted: ref("color.ink") } });
+
+function nightBook(light, night) {
+  const book = composeBook("dark", [system(light), dark(night)]);
+  try {
+    book.resolve("color.muted");
+    return book;
+  } catch {
+    return composeBook("dark", [system(light), dark(night), plainMuted]);
+  }
+}
+
 export function books({ light = "#0000ee", dark: night = "#0000ee" } = {}) {
   return {
     light: composeBook("light", [system(light)]),
-    night: composeBook("dark", [system(light), dark(night)]),
+    night: nightBook(light, night),
   };
 }
 
