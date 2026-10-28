@@ -30,6 +30,34 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@meodai" />
     <link rel="stylesheet" href="/src/style.css" />
+    <script>
+      (() => {
+        const params = new URLSearchParams(location.search);
+        const hex = (name) => {
+          const value = params.get(name);
+          return /^([0-9a-f]{3}){1,2}$/i.test(value ?? "") ? `#${value}` : null;
+        };
+        const light = hex("cl") ?? hex("cd");
+        if (!light) return;
+        const dark = hex("cd") ?? light;
+        const digits =
+          dark.length === 4 ? [...dark.slice(1)].map((c) => c + c) : dark.slice(1).match(/../g);
+        const [r, g, b] = digits.map((c) => {
+          const v = parseInt(c, 16) / 255;
+          return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+        });
+        const bright = 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.179;
+        const style = document.createElement("style");
+        style.textContent = `:root { --color-accent: ${light}; --color-underline: ${light}; }
+          @media (prefers-color-scheme: dark) { :root {
+            --color-paper: ${dark};
+            --color-ink: ${bright ? "#161616" : "#f7f7f7"};
+            --color-accent: ${bright ? "#000000" : "#ffffff"};
+            --color-underline: ${bright ? "#ffffff" : "#000000"};
+          } }`;
+        document.head.append(style);
+      })();
+    </script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
