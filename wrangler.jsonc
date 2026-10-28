@@ -1,5 +1,4 @@
 {
-  // Static site: Vite builds to dist/, Workers serves it as assets.
   "name": "meodai",
   "compatibility_date": "2026-10-01",
   "assets": {
