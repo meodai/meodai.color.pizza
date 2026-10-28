@@ -267,6 +267,8 @@ let depth = 0;
 let plunge = 0;
 let unwind = 0;
 let swipe = null;
+let fling = 0;
+let glide = 0;
 let frame = 0;
 
 function normalize([x, y, z]) {
@@ -851,6 +853,7 @@ function paintTrail(now) {
 function step(now) {
   const dt = Math.min((now - last) / 1000, 1 / 30);
   last = now;
+  coast(dt);
   const climbing = plunge < depth;
   depth =
     Math.abs(plunge - depth) < 0.5 ? plunge : depth + (plunge - depth) * (1 - Math.exp(-dt / 0.12));
@@ -930,6 +933,7 @@ function step(now) {
   place();
 
   const resting =
+    !glide &&
     depth === plunge &&
     lit &&
     toned &&
@@ -1026,6 +1030,7 @@ function wake() {
 }
 
 function focused() {
+  if (narrow.matches) return null;
   if (hovering.matches) {
     if (!pointer) return null;
     return document
@@ -1130,13 +1135,25 @@ function bottomed() {
   return scrollY + innerHeight >= document.documentElement.scrollHeight - 2;
 }
 
-function travel(distance, event) {
-  if (!bottomed() || (distance <= 0 && !depth)) return;
-  if (event.cancelable) event.preventDefault();
+function shove(distance) {
   if (distance > 0) unwind = 0;
   else unwind ||= Math.max(UNWIND, plunge / (2 * innerHeight));
   plunge = Math.max(0, plunge + (distance < 0 ? distance * unwind : distance));
+}
+
+function travel(distance, event) {
+  if (!bottomed() || (distance <= 0 && !depth)) return false;
+  if (event.cancelable) event.preventDefault();
+  shove(distance);
   wake();
+  return true;
+}
+
+function coast(dt) {
+  if (!glide) return;
+  shove(glide * dt);
+  glide *= Math.exp(-dt / 0.35);
+  if (Math.abs(glide) < 20 || (glide < 0 && !plunge)) glide = 0;
 }
 
 function dive(event) {
@@ -1144,9 +1161,22 @@ function dive(event) {
 }
 
 function drag(event) {
+  if (event.type === "touchend") {
+    glide = swipe && performance.now() - swipe.time < 100 ? fling : 0;
+    if (glide) wake();
+    return;
+  }
   const y = event.touches[0].clientY;
-  if (event.type === "touchmove" && swipe !== null) travel(swipe - y, event);
-  swipe = y;
+  const time = performance.now();
+  if (event.type === "touchstart") {
+    glide = 0;
+    fling = 0;
+  } else if (swipe) {
+    const moved = travel(swipe.y - y, event);
+    const dt = Math.max(time - swipe.time, 1) / 1000;
+    fling = moved ? fling * 0.2 + ((swipe.y - y) / dt) * 0.8 : 0;
+  }
+  swipe = { y, time };
 }
 
 function touch(event) {
@@ -1209,6 +1239,7 @@ function start() {
   addEventListener("wheel", dive, { passive: false });
   addEventListener("touchstart", drag, { passive: true });
   addEventListener("touchmove", drag, { passive: false });
+  addEventListener("touchend", drag, { passive: true });
   addEventListener("scroll", () => position && wake(), { passive: true });
   addEventListener("load", wake);
   document.fonts.ready.then(() => {
