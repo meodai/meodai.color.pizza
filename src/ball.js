@@ -18,6 +18,8 @@ const EDGE = 1 - 2 * COVER;
 const RIM = Math.acos(EDGE) / Math.PI;
 const LABEL = 256;
 const LABEL_SPAN = Math.sqrt(1 - EDGE * EDGE);
+const INITIALS_SPAN = 0.6;
+const WHITE = [1, 1, 1];
 const TURN = 2000;
 const TILT = 2400;
 const FRICTION = 0.9;
@@ -60,6 +62,13 @@ const LETTER = `
     vec2 uv = vec2(body.x, -body.y) / ${number(LABEL_SPAN)};
     if (abs(uv.x) >= 1.0 || abs(uv.y) >= 1.0) return 0.0;
     return texture(label, (uv + 1.0) / 2.0).a;
+  }
+  uniform sampler2D initials;
+  float initial(vec3 body) {
+    if (body.z >= 0.0) return 0.0;
+    vec2 uv = body.xy / ${number(INITIALS_SPAN)};
+    if (abs(uv.x) >= 1.0 || abs(uv.y) >= 1.0) return 0.0;
+    return texture(initials, (uv + 1.0) / 2.0).a;
   }`;
 const BALL_VERTEX = `#version 300 es
   in vec2 corner;
@@ -91,6 +100,7 @@ const BALL_FRAGMENT = `#version 300 es
     float t = acos(clamp(-body.z, -1.0, 1.0)) / ${number(Math.PI)};
     vec3 tint = mix(paint, paper, smoothstep(${number(RIM - 0.005)}, ${number(RIM)}, t));
     tint = mix(tint, mark, letter(body));
+    tint = mix(tint, vec3(1.0), initial(body));
     float light = 0.4 + 0.75 * max(0.0, dot(n, lamp));
     float glow =
       pow(max(0.0, dot(n, normalize(lamp - vec3(0.0, 0.0, 1.0)))), 48.0) * 0.6 +
@@ -193,7 +203,8 @@ const PRINT_FRAGMENT = `#version 300 es
   ${LETTER}
   void main() {
     vec2 at = ground / radius;
-    float a = letter(normalize(vX * at.x + vY * at.y + vZ)) * vFade;
+    vec3 body = normalize(vX * at.x + vY * at.y + vZ);
+    float a = max(letter(body), initial(body)) * vFade;
     if (a <= 0.0) discard;
     color = vec4(vTint * a, a);
   }`;
@@ -201,6 +212,7 @@ const PRINT_FRAGMENT = `#version 300 es
 let radius = 0;
 let pixelRatio = 1;
 let label = null;
+let initials = null;
 let paint = [0, 0, 0];
 let paper = [1, 1, 1];
 let mark = [0, 0, 0];
@@ -291,6 +303,24 @@ async function buildLabel() {
   label = canvas;
   ball.label = texture(sphereGl, label, ball.label);
   floor.label = texture(trailGl, label, floor.label);
+  drawn = null;
+  wake();
+}
+
+async function buildInitials() {
+  const family = getComputedStyle(document.body).fontFamily;
+  const size = LABEL * 0.6;
+  await document.fonts.load(`${size}px ${family}`, "DA");
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = LABEL;
+  const context = canvas.getContext("2d");
+  context.font = `${size}px ${family}`;
+  context.textAlign = "center";
+  const { actualBoundingBoxAscent } = context.measureText("DA");
+  context.fillText("DA", LABEL / 2, (LABEL + actualBoundingBoxAscent) / 2);
+  initials = canvas;
+  ball.initials = texture(sphereGl, initials, ball.initials);
+  floor.initials = texture(trailGl, initials, floor.initials);
   drawn = null;
   wake();
 }
@@ -386,9 +416,11 @@ function setupBall() {
         "extent",
         "lamp",
         "label",
+        "initials",
       ]),
     ),
     label: texture(gl, label),
+    initials: texture(gl, initials),
   };
   drawn = null;
 }
@@ -411,7 +443,14 @@ function setupFloor() {
     ),
     prints: shape(
       gl,
-      compile(gl, PRINT_VERTEX, PRINT_FRAGMENT, ["view", "scroll", "across", "radius", "label"]),
+      compile(gl, PRINT_VERTEX, PRINT_FRAGMENT, [
+        "view",
+        "scroll",
+        "across",
+        "radius",
+        "label",
+        "initials",
+      ]),
       [
         ["center", 2],
         ["direction", 2],
@@ -424,6 +463,7 @@ function setupFloor() {
       ],
     ),
     label: texture(gl, label),
+    initials: texture(gl, initials),
   };
   splashes = splashes.filter((splash) => !splash.texture);
 }
@@ -577,6 +617,9 @@ function paintSphere() {
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, ball.label);
   gl.uniform1i(uniforms.label, 0);
+  gl.activeTexture(gl.TEXTURE1);
+  gl.bindTexture(gl.TEXTURE_2D, ball.initials);
+  gl.uniform1i(uniforms.initials, 1);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
 
@@ -618,16 +661,15 @@ function stamp(count, x, y, size, [px, py, pz], fade, color) {
 
 function press(now, ground) {
   const speed = Math.hypot(...ground);
-  if (!label || speed < 1) return;
+  if (!label || !initials || speed < 1) return;
   const orient = axes();
-  if (orient[8] < 0) return;
   prints.push({
     x: position[0],
     y: position[1],
     direction: [ground[0] / speed, ground[1] / speed],
     along: Math.min(Math.max(1.5, speed / 60), 6) / 2 + 0.4,
     orient,
-    color: mark.map(toGamma),
+    color: (orient[8] < 0 ? WHITE : mark).map(toGamma),
     time: now,
   });
 }
@@ -718,6 +760,9 @@ function paintTrail(now) {
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, floor.label);
     gl.uniform1i(uniforms.label, 0);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, floor.initials);
+    gl.uniform1i(uniforms.initials, 1);
     gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, pressed.length);
   }
 }
@@ -999,6 +1044,7 @@ function start() {
   setupBall();
   setupFloor();
   buildLabel();
+  buildInitials();
   const [x, y] = corner(focused());
   position = [x, y + scrollY];
   lastScroll = scrollY;
