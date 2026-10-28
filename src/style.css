@@ -57,6 +57,8 @@
     --portrait-width: 9rem;
     --portrait-gap: 1.25rem;
     --measure: 23.125rem;
+    --name-size: 2.125rem;
+    --cap-height: 0.7615;
   }
   @media (max-width: 68.75em) {
     :root {
@@ -125,12 +127,16 @@
     grid-column: 2 / 4;
     min-inline-size: 0;
     padding-block-start: calc(
-      var(--shell-top) + var(--portrait-width) + var(--portrait-gap) - 0.05rem
+      var(--shell-top) + var(--portrait-width) + var(--portrait-gap) +
+        (1.1 * var(--name-size) - var(--leading)) / 2
     );
   }
   @supports (text-box: trim-start cap alphabetic) {
     .shell__content {
-      padding-block-start: calc(var(--shell-top) + var(--portrait-width) + var(--portrait-gap));
+      padding-block-start: calc(
+        var(--shell-top) + var(--portrait-width) + var(--portrait-gap) +
+          var(--cap-height) * (var(--name-size) - var(--text)) / 2
+      );
     }
   }
 
@@ -271,7 +277,7 @@
     margin-block-end: var(--portrait-gap);
   }
   .intro__name {
-    font-size: 2.125rem;
+    font-size: var(--name-size);
     line-height: 1.1;
   }
   .intro__role,

@@ -612,5 +612,24 @@
     <script type="module" src="/src/reel.js"></script>
     <script type="module" src="/src/ball.js"></script>
     <script type="module" src="/src/eyes.js"></script>
+    <!--
+    <div class="guide" style="position: absolute; inset-inline: 0; block-size: 1px; background: red; pointer-events: none; z-index: 9999"></div>
+    <script>
+      const guide = document.querySelector(".guide");
+      const name = document.querySelector(".intro__name");
+      const place = () => {
+        const probe = document.createElement("span");
+        probe.style.cssText = "display: inline-block; inline-size: 0; block-size: 0";
+        name.prepend(probe);
+        const baseline = probe.getBoundingClientRect().bottom;
+        probe.remove();
+        const cap = (parseFloat(getComputedStyle(name).fontSize) * 1523) / 2000;
+        guide.style.insetBlockStart = `${baseline + scrollY - cap / 2}px`;
+      };
+      place();
+      addEventListener("resize", place);
+      document.fonts.ready.then(place);
+    </script>
+    -->
   </body>
 </html>

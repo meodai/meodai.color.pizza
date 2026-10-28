@@ -15,6 +15,7 @@ const THIN = 0.2;
 const WIDE = 1.1;
 const SWELL = 0.8;
 const NARROW = 0.1;
+const CAP_HEIGHT = 1523 / 2000;
 const COVER = 0.75;
 const EDGE = 1 - 2 * COVER;
 const RIM = Math.acos(EDGE) / Math.PI;
@@ -565,12 +566,26 @@ function paintSplat(context, { x, y, angle, size, stretch, bend, flick }) {
   }
 }
 
+function center(element) {
+  const { top, bottom } = element.getBoundingClientRect();
+  return (top + bottom) / 2;
+}
+
+function capCenter(element) {
+  const probe = document.createElement("span");
+  probe.style.cssText = "display: inline-block; inline-size: 0; block-size: 0";
+  element.prepend(probe);
+  const baseline = probe.getBoundingClientRect().bottom;
+  probe.remove();
+  return baseline - (parseFloat(getComputedStyle(element).fontSize) * CAP_HEIGHT) / 2;
+}
+
 function resize() {
   pixelRatio = devicePixelRatio || 1;
   radius = sphere.offsetWidth / 2;
   pageHeight = Math.max(document.body.offsetHeight, innerHeight);
   const name = document.querySelector(".intro__name");
-  nudge = name ? parseFloat(getComputedStyle(name).fontSize) * 0.1 : 0;
+  nudge = name ? center(name) - capCenter(name) : 0;
   const width = document.documentElement.clientWidth;
   const height = Math.min(Math.ceil(innerHeight * BAND), pageHeight);
   if (width !== bandWidth || height !== bandHeight || trail.width !== width * pixelRatio) {
@@ -1079,7 +1094,10 @@ function start() {
   addEventListener("touchmove", touch, { passive: true });
   addEventListener("scroll", () => position && wake(), { passive: true });
   addEventListener("load", wake);
-  document.fonts.ready.then(wake);
+  document.fonts.ready.then(() => {
+    resize();
+    wake();
+  });
   new ResizeObserver(() => {
     resize();
     wake();
