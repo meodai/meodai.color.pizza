@@ -18,10 +18,10 @@ const NARROW = 0.1;
 const CAP_HEIGHT = 1523 / 2000;
 const UNWIND = 4;
 const GROW = 3;
+const HOLD = 1 - Math.log(2) / Math.log(GROW);
 const KEEP = 20;
 const COVER = 0.75;
 const EDGE = 1 - 2 * COVER;
-const RIM = Math.acos(EDGE) / Math.PI;
 const LABEL = 256;
 const LABEL_SPAN = Math.sqrt(1 - EDGE * EDGE);
 const INITIALS_SPAN = 0.6;
@@ -62,17 +62,24 @@ const CLIP = `
     return vec4(at.x / view.x * 2.0 - 1.0, 1.0 - (at.y - scroll) / view.y * 2.0, 0.0, 1.0);
   }`;
 const LETTER = `
+  uniform float shrink;
   uniform sampler2D label;
+  float span() {
+    return ${number(LABEL_SPAN)} / shrink;
+  }
+  float crown() {
+    return sqrt(1.0 - span() * span());
+  }
   float letter(vec3 body) {
-    if (body.z <= ${number(-EDGE)}) return 0.0;
-    vec2 uv = vec2(body.x, -body.y) / ${number(LABEL_SPAN)};
+    if (body.z <= crown()) return 0.0;
+    vec2 uv = vec2(body.x, -body.y) / span();
     if (abs(uv.x) >= 1.0 || abs(uv.y) >= 1.0) return 0.0;
     return texture(label, (uv + 1.0) / 2.0).a;
   }
   uniform sampler2D initials;
   float initial(vec3 body) {
     if (body.z >= 0.0) return 0.0;
-    vec2 uv = body.xy / ${number(INITIALS_SPAN)};
+    vec2 uv = body.xy * shrink / ${number(INITIALS_SPAN)};
     if (abs(uv.x) >= 1.0 || abs(uv.y) >= 1.0) return 0.0;
     return texture(initials, (uv + 1.0) / 2.0).a;
   }`;
@@ -104,7 +111,8 @@ const BALL_FRAGMENT = `#version 300 es
     vec3 n = vec3(p, -sqrt(1.0 - d));
     vec3 body = orient * n;
     float t = acos(clamp(-body.z, -1.0, 1.0)) / ${number(Math.PI)};
-    vec3 tint = mix(paint, paper, smoothstep(${number(RIM - 0.005)}, ${number(RIM)}, t));
+    float rim = acos(-crown()) / ${number(Math.PI)};
+    vec3 tint = mix(paint, paper, smoothstep(rim - 0.005, rim, t));
     tint = mix(tint, mark, letter(body));
     tint = mix(tint, vec3(1.0), initial(body));
     float light = 0.4 + 0.75 * max(0.0, dot(n, lamp));
@@ -438,6 +446,7 @@ function setupBall() {
         "mark",
         "extent",
         "lamp",
+        "shrink",
         "label",
         "initials",
       ]),
@@ -471,6 +480,7 @@ function setupFloor() {
         "scroll",
         "across",
         "radius",
+        "shrink",
         "label",
         "initials",
         "cut",
@@ -523,8 +533,16 @@ function spin(q, [wx, wy, wz], dt) {
   return r.map((v) => v / length);
 }
 
+function shrink() {
+  return grow ** HOLD;
+}
+
+function rim() {
+  return -Math.sqrt(1 - (LABEL_SPAN / shrink()) ** 2);
+}
+
 function inked() {
-  return rotate(rotation, [0, 0, -1])[2] > EDGE - 0.3;
+  return rotate(rotation, [0, 0, -1])[2] > rim() - 0.3;
 }
 
 function splash(angle, spread, count, reach, now) {
@@ -670,7 +688,7 @@ function axes() {
 }
 
 function paintSphere() {
-  const key = `${rotation.join()},${height},${lamp.join()},${tone}`;
+  const key = `${rotation.join()},${height},${lamp.join()},${tone},${grow}`;
   if (key === drawn || sphereGl.isContextLost()) return;
   drawn = key;
   const gl = sphereGl;
@@ -686,6 +704,7 @@ function paintSphere() {
   gl.uniform3fv(uniforms.mark, mark);
   gl.uniform1f(uniforms.extent, sphere.width / 2);
   gl.uniform3fv(uniforms.lamp, lamp);
+  gl.uniform1f(uniforms.shrink, shrink());
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, ball.label);
   gl.uniform1i(uniforms.label, 0);
@@ -714,10 +733,10 @@ function place() {
   dock.style.translate = `${dockX - dockRadius}px ${dockY - dockRadius}px`;
 }
 
-function stamp(count, x, y, size, [px, py, pz], fade, color) {
+function stamp(count, x, y, size, [px, py, pz], edge, fade, color) {
   const reach = Math.hypot(px, py);
   const cut =
-    reach < 1e-6 ? -Math.sign(pz - EDGE) * Infinity : (radius * fade * (EDGE - pz)) / reach;
+    reach < 1e-6 ? -Math.sign(pz - edge) * Infinity : (radius * fade * (edge - pz)) / reach;
   if (cut >= size) return count;
   if (strokeData.length < (count + 1) * STROKE_SIZE) {
     const grown = new Float32Array(strokeData.length * 2);
@@ -777,6 +796,7 @@ function paintTrail(now) {
         mix(from.y, b.y),
         (mix(from.width, b.width) / 2) * fade,
         [mix(from.pole[0], b.pole[0]), mix(from.pole[1], b.pole[1]), mix(from.pole[2], b.pole[2])],
+        mix(from.edge, b.edge),
         fade,
         b.color,
       );
@@ -835,6 +855,7 @@ function paintTrail(now) {
     gl.uniform1f(uniforms.scroll, band);
     gl.uniform1f(uniforms.across, radius * 0.9);
     gl.uniform1f(uniforms.radius, radius);
+    gl.uniform1f(uniforms.shrink, shrink());
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, floor.label);
     gl.uniform1i(uniforms.label, 0);
@@ -902,7 +923,16 @@ function step(now) {
     const width = stroke;
     if (gap || Math.hypot(position[0] - previous.x, position[1] - previous.y) > 1.5) {
       const pole = rotate(rotation, [0, 0, -1]);
-      points.push({ x: position[0], y: position[1], width, pole, gap, color: ink, time: now });
+      points.push({
+        x: position[0],
+        y: position[1],
+        width,
+        pole,
+        edge: rim(),
+        gap,
+        color: ink,
+        time: now,
+      });
       press(now, ground);
     } else {
       previous.width = width;
