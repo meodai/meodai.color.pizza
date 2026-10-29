@@ -367,7 +367,7 @@
     inline-size: 0.875rem;
     block-size: 0.875rem;
     border-radius: 50%;
-    background: currentColor;
+    background: var(--color-accent);
   }
   .settings-trigger[aria-expanded="true"] {
     border-color: var(--color-accent);
