@@ -1,4 +1,7 @@
 import portrait from "./portrait.svg?url";
+import elastiq from "./elastiq.svg?url";
+import parrot from "./parrot.svg?url";
+import { Poline, positionFunctions } from "poline";
 
 const moving = matchMedia("(prefers-reduced-motion: no-preference)");
 const hovering = matchMedia("(hover: hover) and (pointer: fine)");
@@ -20,10 +23,9 @@ const UNWIND = 4;
 const GROW = 3;
 const HOLD = 1 - Math.log(2) / Math.log(GROW);
 const KEEP = 20;
-const COVER = 0.75;
-const EDGE = 1 - 2 * COVER;
 const LABEL = 256;
-const LABEL_SPAN = Math.sqrt(1 - EDGE * EDGE);
+const BANDS = 8;
+const STAMPS = { face: portrait, elastiq, parrot };
 const INITIALS_SPAN = 0.6;
 const WHITE = [1, 1, 1];
 const TURN = 2000;
@@ -62,23 +64,23 @@ const CLIP = `
     return vec4(at.x / view.x * 2.0 - 1.0, 1.0 - (at.y - scroll) / view.y * 2.0, 0.0, 1.0);
   }`;
 const LETTER = `
+  uniform float span;
   uniform float shrink;
+  uniform bool stamped;
   uniform sampler2D label;
-  float span() {
-    return ${number(LABEL_SPAN)} / shrink;
-  }
   float crown() {
-    return sqrt(1.0 - span() * span());
+    return sqrt(1.0 - span * span);
   }
   float letter(vec3 body) {
-    if (body.z <= crown()) return 0.0;
-    vec2 uv = vec2(body.x, -body.y) / span();
+    if (!stamped || span <= 0.0 || body.z <= crown()) return 0.0;
+    vec2 uv = vec2(body.x, -body.y) / span;
     if (abs(uv.x) >= 1.0 || abs(uv.y) >= 1.0) return 0.0;
     return texture(label, (uv + 1.0) / 2.0).a;
   }
   uniform sampler2D initials;
+  uniform bool lettered;
   float initial(vec3 body) {
-    if (body.z >= 0.0) return 0.0;
+    if (!lettered || body.z >= 0.0) return 0.0;
     vec2 uv = body.xy * shrink / ${number(INITIALS_SPAN)};
     if (abs(uv.x) >= 1.0 || abs(uv.y) >= 1.0) return 0.0;
     return texture(initials, (uv + 1.0) / 2.0).a;
@@ -96,10 +98,15 @@ const BALL_FRAGMENT = `#version 300 es
   out vec4 color;
   uniform mat3 orient;
   uniform vec3 paint;
+  uniform vec3 bands[${BANDS}];
+  uniform int count;
+  uniform bool blended;
   uniform vec3 paper;
   uniform vec3 mark;
   uniform float extent;
   uniform vec3 lamp;
+  uniform float spotlight;
+  uniform float shading;
   ${LETTER}
   vec3 toGamma(vec3 v) {
     v = clamp(v, 0.0, 1.0);
@@ -111,12 +118,25 @@ const BALL_FRAGMENT = `#version 300 es
     vec3 n = vec3(p, -sqrt(1.0 - d));
     vec3 body = orient * n;
     float t = acos(clamp(-body.z, -1.0, 1.0)) / ${number(Math.PI)};
-    float rim = acos(-crown()) / ${number(Math.PI)};
-    vec3 tint = mix(paint, paper, smoothstep(rim - 0.005, rim, t));
+    float rim = span > 0.0 ? acos(-crown()) / ${number(Math.PI)} : 1.0;
+    vec3 tint = paint;
+    if (count > 1 && blended) {
+      float f = clamp(t / rim, 0.0, 1.0) * float(count - 1);
+      int i = min(int(f), count - 2);
+      tint = mix(bands[i], bands[i + 1], f - float(i));
+    } else if (count > 0) {
+      float f = t / rim * float(count);
+      int i = min(int(f), count - 1);
+      float edge = smoothstep(1.0 - fwidth(f), 1.0, fract(f));
+      tint = mix(bands[i], bands[min(i + 1, count - 1)], edge);
+    }
+    if (span > 0.0) tint = mix(tint, paper, smoothstep(rim - 0.005, rim, t));
     tint = mix(tint, mark, letter(body));
     tint = mix(tint, vec3(1.0), initial(body));
-    float light = 0.4 + 0.75 * max(0.0, dot(n, lamp));
-    float glow = pow(1.0 + n.z, 3.0) * 0.15;
+    float light = mix(1.0, 0.4 + 0.75 * max(0.0, dot(n, lamp)), shading);
+    float glow =
+      pow(max(0.0, dot(n, normalize(lamp - vec3(0.0, 0.0, 1.0)))), 12.0) * 0.15 * spotlight +
+      pow(1.0 + n.z, 3.0) * 0.15 * shading;
     float alpha = min(1.0, (1.0 - sqrt(d)) * extent * 1.5);
     color = vec4(toGamma(min(tint * light + glow, 1.0)) * alpha, alpha);
   }`;
@@ -226,9 +246,24 @@ let radius = 0;
 let unit = 0;
 let grow = 1;
 let pixelRatio = 1;
-let label = null;
+let labels = {};
 let initials = null;
 let accent = [0, 0, 1];
+let themed = [0, 0, 1];
+let hue = 0;
+let palettes = { poline: [], gradient: [] };
+let panel = null;
+let trigger = null;
+let settings = {
+  spotlight: false,
+  shading: false,
+  shadow: false,
+  initials: true,
+  stamp: "face",
+  size: 25,
+  color: "theme",
+  custom: "#0000ee",
+};
 let base = [0, 0, 0];
 let tone = 0;
 let paint = [0, 0, 0];
@@ -303,9 +338,13 @@ function readColor(color) {
   return channels.map((v) => toLinear(v / 255));
 }
 
-async function buildLabel() {
+function stamps(gl) {
+  return Object.fromEntries(Object.keys(STAMPS).map((name) => [name, texture(gl, labels[name])]));
+}
+
+async function buildLabel(name) {
   const image = new Image(LABEL, LABEL);
-  image.src = portrait;
+  image.src = STAMPS[name];
   await image.decode();
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = LABEL;
@@ -314,9 +353,9 @@ async function buildLabel() {
   context.arc(LABEL / 2, LABEL / 2, LABEL / 2, 0, Math.PI * 2);
   context.clip();
   context.drawImage(image, 0, 0, LABEL, LABEL);
-  label = canvas;
-  ball.label = texture(sphereGl, label, ball.label);
-  floor.label = texture(trailGl, label, floor.label);
+  labels[name] = canvas;
+  ball.labels[name] = texture(sphereGl, canvas, ball.labels[name]);
+  floor.labels[name] = texture(trailGl, canvas, floor.labels[name]);
   drawn = null;
   wake();
 }
@@ -342,16 +381,103 @@ async function buildInitials() {
 function buildColors() {
   paper = readColor(getComputedStyle(document.body).backgroundColor);
   const root = getComputedStyle(document.documentElement);
-  accent = readColor(root.getPropertyValue(dark.matches ? "--color-underline" : "--color-accent"));
+  themed = readColor(root.getPropertyValue(dark.matches ? "--color-underline" : "--color-accent"));
+  accent = chosen();
   base = readColor(root.getPropertyValue("--color-ink"));
   mixPaint();
   drawn = null;
 }
 
+function chosen() {
+  const { color, custom } = settings;
+  if (color === "theme" || color === "cycle") return themed;
+  if (color in palettes) return swatches()[0] ?? themed;
+  return readColor(color === "custom" ? custom : color);
+}
+
+function swatches() {
+  return palettes[settings.color] ?? [];
+}
+
+function shuffle(kind) {
+  const shapes = Object.values(positionFunctions);
+  const pick = () => shapes[Math.floor(Math.random() * shapes.length)];
+  const palette = new Poline({
+    numPoints: 2 + Math.floor(Math.random() * 4),
+    positionFunctionX: pick(),
+    positionFunctionY: pick(),
+    positionFunctionZ: pick(),
+  }).colorsCSS;
+  palettes[kind] = palette.map(readColor);
+  const step = 100 / palette.length;
+  const stops =
+    kind === "gradient"
+      ? palette
+      : palette.map((color, i) => `${color} ${i * step}% ${(i + 1) * step}%`);
+  return `conic-gradient(${stops.join(", ")})`;
+}
+
+function contact() {
+  const t = Math.acos(Math.min(Math.max(rotate(rotation, [0, 0, -1])[2], -1), 1)) / Math.PI;
+  const top = Math.acos(rim()) / Math.PI;
+  const colors = swatches();
+  const n = colors.length;
+  if (settings.color === "gradient") {
+    const f = Math.min(Math.max((t / top) * (n - 1), 0), n - 1);
+    const i = Math.min(Math.floor(f), n - 2);
+    return colors[i].map((v, c) => v + (colors[i + 1][c] - v) * (f - i));
+  }
+  return colors[Math.max(Math.min(Math.floor((t / top) * n), n - 1), 0)];
+}
+
+function toOklab([r, g, b]) {
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  return [
+    0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+    1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+    0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
+  ];
+}
+
+function fromOklab([L, a, b]) {
+  const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
+  return [
+    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
+  ];
+}
+
+function cycle(distance) {
+  if (distance <= 0 || settings.color !== "cycle") return;
+  hue += distance * 0.0015;
+  const [lightness, a, b] = toOklab(themed);
+  const L = Math.min(lightness + 0.15, 0.9);
+  const angle = Math.atan2(b, a) + hue;
+  let chroma = Math.hypot(a, b);
+  let color = fromOklab([L, chroma * Math.cos(angle), chroma * Math.sin(angle)]);
+  while (color.some((v) => v < 0 || v > 1) && chroma > 0.001) {
+    chroma *= 0.95;
+    color = fromOklab([L, chroma * Math.cos(angle), chroma * Math.sin(angle)]);
+  }
+  accent = color.map((v) => Math.min(Math.max(v, 0), 1));
+  mixPaint();
+}
+
+function darkest() {
+  const light = ([r, g, b]) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return swatches().reduce((a, b) => (light(b) < light(a) ? b : a));
+}
+
 function mixPaint() {
-  paint = accent.map((v, i) => v + (base[i] - v) * tone);
+  const fade = settings.color === "theme" ? tone : 0;
+  paint = accent.map((v, i) => v + (base[i] - v) * fade);
   ink = paint.map(toGamma);
-  mark = dark.matches ? WHITE : paint;
+  mark = settings.color in palettes ? darkest() : dark.matches ? WHITE : paint;
 }
 
 function blend(dt) {
@@ -440,16 +566,24 @@ function setupBall() {
       compile(gl, BALL_VERTEX, BALL_FRAGMENT, [
         "orient",
         "paint",
+        "bands",
+        "count",
+        "blended",
         "paper",
         "mark",
         "extent",
         "lamp",
+        "spotlight",
+        "shading",
+        "span",
         "shrink",
+        "stamped",
+        "lettered",
         "label",
         "initials",
       ]),
     ),
-    label: texture(gl, label),
+    labels: stamps(gl),
     initials: texture(gl, initials),
   };
   drawn = null;
@@ -478,7 +612,10 @@ function setupFloor() {
         "scroll",
         "across",
         "radius",
+        "span",
         "shrink",
+        "stamped",
+        "lettered",
         "label",
         "initials",
         "cut",
@@ -494,7 +631,7 @@ function setupFloor() {
         ["tint", 3],
       ],
     ),
-    label: texture(gl, label),
+    labels: stamps(gl),
     initials: texture(gl, initials),
   };
   splashes = splashes.filter((splash) => !splash.texture);
@@ -535,8 +672,23 @@ function shrink() {
   return grow ** HOLD;
 }
 
+function span() {
+  const crown = 1 - settings.size / 50;
+  return Math.sqrt(1 - crown * crown) / shrink();
+}
+
 function rim() {
-  return -Math.sqrt(1 - (LABEL_SPAN / shrink()) ** 2);
+  return -Math.sqrt(1 - span() ** 2);
+}
+
+function face(gl, holder, uniforms) {
+  gl.uniform1f(uniforms.span, span());
+  gl.uniform1f(uniforms.shrink, shrink());
+  gl.uniform1i(uniforms.stamped, settings.stamp === "hole" ? 0 : 1);
+  gl.uniform1i(uniforms.lettered, settings.initials ? 1 : 0);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, holder.labels[settings.stamp] ?? holder.labels.face);
+  gl.uniform1i(uniforms.label, 0);
 }
 
 function inked() {
@@ -546,16 +698,16 @@ function inked() {
 function splash(angle, spread, count, reach, now) {
   const drops = Array.from({ length: count }, () => {
     const direction = angle + (Math.random() - 0.5) * spread;
-    const distance = radius * (0.5 + Math.random() * reach);
-    const size = radius * (0.03 + Math.random() ** 2 * 0.14);
+    const distance = radius * 0.5 + unit * Math.random() * reach;
+    const size = unit * (0.03 + Math.random() ** 2 * 0.14);
     const flick = Math.random() < 0.25;
     return {
       x: Math.cos(direction) * distance,
       y: Math.sin(direction) * distance,
       angle: direction,
       size,
-      stretch: flick ? radius * (0.3 + Math.random() * 0.6) : size * (1 + Math.random() * 1.5),
-      bend: (Math.random() - 0.5) * radius * 0.6,
+      stretch: flick ? unit * (0.3 + Math.random() * 0.6) : size * (1 + Math.random() * 1.5),
+      bend: (Math.random() - 0.5) * unit * 0.6,
       flick,
     };
   });
@@ -686,7 +838,7 @@ function axes() {
 }
 
 function paintSphere() {
-  const key = `${rotation.join()},${height},${lamp.join()},${tone},${grow}`;
+  const key = `${rotation.join()},${height},${lamp.join()},${tone},${grow},${paint.join()},${swatches().join()},${JSON.stringify(settings)}`;
   if (key === drawn || sphereGl.isContextLost()) return;
   drawn = key;
   const gl = sphereGl;
@@ -698,14 +850,17 @@ function paintSphere() {
   gl.bindVertexArray(vao);
   gl.uniformMatrix3fv(uniforms.orient, false, axes());
   gl.uniform3fv(uniforms.paint, paint);
+  const striped = swatches().slice(0, BANDS);
+  gl.uniform1i(uniforms.count, striped.length);
+  gl.uniform1i(uniforms.blended, settings.color === "gradient" ? 1 : 0);
+  if (striped.length) gl.uniform3fv(uniforms.bands, striped.flat());
   gl.uniform3fv(uniforms.paper, paper);
   gl.uniform3fv(uniforms.mark, mark);
   gl.uniform1f(uniforms.extent, sphere.width / 2);
   gl.uniform3fv(uniforms.lamp, lamp);
-  gl.uniform1f(uniforms.shrink, shrink());
-  gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, ball.label);
-  gl.uniform1i(uniforms.label, 0);
+  gl.uniform1f(uniforms.spotlight, settings.spotlight ? 1 : 0);
+  gl.uniform1f(uniforms.shading, settings.shading ? 1 : 0);
+  face(gl, ball, uniforms);
   gl.activeTexture(gl.TEXTURE1);
   gl.bindTexture(gl.TEXTURE_2D, ball.initials);
   gl.uniform1i(uniforms.initials, 1);
@@ -751,7 +906,7 @@ function stamp(count, x, y, size, [px, py, pz], edge, fade, color) {
 
 function press(now, ground) {
   const speed = Math.hypot(...ground);
-  if (!label || !initials || speed < 1) return;
+  if (!initials || speed < 1) return;
   const orient = axes();
   const last = prints.at(-1);
   const travelled = last ? Math.hypot(position[0] - last.x, position[1] - last.y) : 0;
@@ -853,10 +1008,7 @@ function paintTrail(now) {
     gl.uniform1f(uniforms.scroll, band);
     gl.uniform1f(uniforms.across, radius * 0.9);
     gl.uniform1f(uniforms.radius, radius);
-    gl.uniform1f(uniforms.shrink, shrink());
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, floor.label);
-    gl.uniform1i(uniforms.label, 0);
+    face(gl, floor, uniforms);
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, floor.initials);
     gl.uniform1i(uniforms.initials, 1);
@@ -910,6 +1062,8 @@ function step(now) {
 
   const ground = [velocity[0], velocity[1] + carried];
   const speed = Math.hypot(...ground);
+  if (height === 0) cycle(speed * dt);
+  if (settings.color in palettes) ink = contact().map(toGamma);
   const previous = points.at(-1);
   if (height === 0) {
     const gap = jumped || !grounded || !previous || previous.lifted;
@@ -959,6 +1113,7 @@ function step(now) {
   paintTrail(now);
   paintSphere();
   place();
+  reveal();
 
   const resting =
     !glide &&
@@ -1091,10 +1246,11 @@ function corner(highlight = null) {
   }
   const title =
     (lane || narrow.matches) && document.querySelector(".intro__name")?.getBoundingClientRect();
-  if (!title) return [x, floor];
   const end = Math.max(1, pageHeight - runout - innerHeight);
   const scrolled = Math.min(Math.max(scrollY / end, 0), 1);
-  const start = (title.top + title.bottom) / 2 - nudge + (narrow.matches ? scrollY : 0);
+  const start = title
+    ? (title.top + title.bottom) / 2 - nudge + (narrow.matches ? scrollY : 0)
+    : floor;
   const y = start + (floor - start) * scrolled;
   if (!runout) return [x, y];
   const past = Math.min(Math.max((scrollY - end) / runout, 0), 1);
@@ -1235,6 +1391,93 @@ function listen() {
   addEventListener("deviceorientation", orient);
 }
 
+function apply() {
+  shadow.hidden = !settings.shadow;
+  hue = 0;
+  accent = chosen();
+  mixPaint();
+  drawn = null;
+  wake();
+}
+
+function configure() {
+  const form = document.querySelector(".settings");
+  if (!form) return;
+  const { elements } = form;
+  elements.spotlight.checked = settings.spotlight;
+  elements.shading.checked = settings.shading;
+  elements.shadow.checked = settings.shadow;
+  elements.initials.checked = settings.initials;
+  elements.stamp.value = settings.stamp;
+  elements.size.value = settings.size;
+  elements.custom.value = settings.custom;
+  elements.color.value = settings.color;
+  form.style.setProperty("--settings-custom", settings.custom);
+  for (const kind of Object.keys(palettes))
+    form.style.setProperty(`--settings-${kind}`, shuffle(kind));
+  form.addEventListener("click", (event) => {
+    const kind = event.target.value;
+    if (!(kind in palettes)) return;
+    form.style.setProperty(`--settings-${kind}`, shuffle(kind));
+    if (settings.color === kind) apply();
+  });
+  form.addEventListener("submit", (event) => event.preventDefault());
+  form.addEventListener("input", (event) => {
+    if (event.target === elements.custom) elements.color.value = "custom";
+    settings = {
+      spotlight: elements.spotlight.checked,
+      shading: elements.shading.checked,
+      shadow: elements.shadow.checked,
+      initials: elements.initials.checked,
+      stamp: elements.stamp.value,
+      size: Number(elements.size.value),
+      color: elements.color.value,
+      custom: elements.custom.value,
+    };
+    form.style.setProperty("--settings-custom", settings.custom);
+    apply();
+  });
+  const stamp = form.querySelector(".settings__stamp");
+  const names = { face: "David", elastiq: "Elastiq", parrot: "Parrot", hole: "Hole" };
+  const order = Object.keys(names);
+  const show = () => {
+    const value = elements.stamp.value;
+    stamp.style.setProperty("--stamp", STAMPS[value] ? `url("${STAMPS[value]}")` : "none");
+    stamp.classList.toggle("settings__stamp--hole", value === "hole");
+    stamp.setAttribute("aria-label", `${names[value]}, click for the next stamp`);
+  };
+  show();
+  stamp.addEventListener("click", () => {
+    elements.stamp.value = order[(order.indexOf(elements.stamp.value) + 1) % order.length];
+    show();
+    form.dispatchEvent(new Event("input"));
+  });
+  const rows = [...form.children];
+  rows.forEach((row, i) => {
+    row.style.setProperty("--rank", i);
+    row.style.setProperty("--order", rows.length - 1 - i);
+  });
+  form.hidden = false;
+  trigger = document.querySelector(".settings-trigger");
+  if (!trigger) return;
+  panel = form;
+  trigger.hidden = false;
+  trigger.addEventListener("click", () => expand(!panel.classList.contains("settings--open")));
+}
+
+function expand(open) {
+  panel.classList.toggle("settings--open", open);
+  trigger.setAttribute("aria-expanded", open);
+}
+
+function reveal() {
+  if (!trigger) return;
+  const deep = overrun() > innerHeight * 0.75;
+  if (deep === trigger.classList.contains("settings-trigger--visible")) return;
+  trigger.classList.toggle("settings-trigger--visible", deep);
+  if (!deep) expand(false);
+}
+
 function start() {
   if (!moving.matches || !sphereGl || !trailGl) return;
   (document.querySelector(".shell") ?? document.body).prepend(trail);
@@ -1243,8 +1486,10 @@ function start() {
   buildColors();
   setupBall();
   setupFloor();
-  buildLabel();
+  for (const name of Object.keys(STAMPS)) buildLabel(name);
   buildInitials();
+  configure();
+  apply();
   const [x, y] = corner(focused());
   position = [x, y + camera()];
   lastScroll = camera();

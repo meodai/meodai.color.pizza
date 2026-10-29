@@ -15,5 +15,8 @@
     "prettier": "^3.9.10",
     "vite": "^8.3.5",
     "wrangler": "^4.151.3"
+  },
+  "dependencies": {
+    "poline": "^0.13.1"
   }
 }

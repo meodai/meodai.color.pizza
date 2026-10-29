@@ -609,6 +609,116 @@
       </main>
       <div class="runout" aria-hidden="true"></div>
     </div>
+    <button
+      class="settings-trigger"
+      type="button"
+      aria-label="Ball settings"
+      aria-controls="settings"
+      aria-expanded="false"
+      hidden
+    ></button>
+    <form class="settings" id="settings" aria-label="Ball settings" autocomplete="off" hidden>
+      <label class="settings__row settings__toggle"
+        ><span class="settings__name">Spotlight</span
+        ><input class="settings__input" type="checkbox" name="spotlight" /><span
+          class="settings__box"
+          aria-hidden="true"
+        ></span
+      ></label>
+      <label class="settings__row settings__toggle"
+        ><span class="settings__name">Shading</span
+        ><input class="settings__input" type="checkbox" name="shading" /><span
+          class="settings__box"
+          aria-hidden="true"
+        ></span
+      ></label>
+      <label class="settings__row settings__toggle"
+        ><span class="settings__name">Shadow</span
+        ><input class="settings__input" type="checkbox" name="shadow" /><span
+          class="settings__box"
+          aria-hidden="true"
+        ></span
+      ></label>
+      <label class="settings__row settings__toggle"
+        ><span class="settings__name">Initials</span
+        ><input class="settings__input" type="checkbox" name="initials" checked /><span
+          class="settings__box"
+          aria-hidden="true"
+        ></span
+      ></label>
+      <div class="settings__row">
+        <span class="settings__name" id="stamp-label">Stamp</span
+        ><input type="hidden" name="stamp" value="face" /><button
+          class="settings__stamp"
+          type="button"
+          aria-describedby="stamp-label"
+        ></button>
+      </div>
+      <label class="settings__row"
+        ><span class="settings__name settings__name--hidden">Stamp size</span
+        ><input class="settings__range" type="range" name="size" min="0" max="50" value="25"
+      /></label>
+      <div class="settings__row" role="group" aria-labelledby="color-label">
+        <span class="settings__name settings__name--hidden" id="color-label">Color</span>
+        <div class="settings__swatches">
+          <label class="settings__swatch settings__swatch--theme"
+            ><input
+              class="settings__input"
+              type="radio"
+              name="color"
+              value="theme"
+              aria-label="Theme"
+              checked
+          /></label>
+          <label class="settings__swatch" style="--swatch: #ff4100"
+            ><input
+              class="settings__input"
+              type="radio"
+              name="color"
+              value="#ff4100"
+              aria-label="Orange"
+          /></label>
+          <label class="settings__swatch settings__swatch--cycle"
+            ><input
+              class="settings__input"
+              type="radio"
+              name="color"
+              value="cycle"
+              aria-label="Cycle the hue while rolling"
+          /></label>
+          <label class="settings__swatch settings__swatch--poline"
+            ><input
+              class="settings__input"
+              type="radio"
+              name="color"
+              value="poline"
+              aria-label="Random Poline palette, click again to reshuffle"
+          /></label>
+          <label class="settings__swatch settings__swatch--gradient"
+            ><input
+              class="settings__input"
+              type="radio"
+              name="color"
+              value="gradient"
+              aria-label="Random Poline gradient, click again to reshuffle"
+          /></label>
+          <span class="settings__swatch settings__swatch--custom"
+            ><input
+              class="settings__input"
+              type="radio"
+              name="color"
+              value="custom"
+              aria-label="Custom color"
+              tabindex="-1" /><input
+              class="settings__picker"
+              type="color"
+              name="custom"
+              value="#0000ee"
+              aria-label="Pick a custom color"
+          /></span>
+        </div>
+      </div>
+    </form>
     <script type="module" src="/src/theme.js"></script>
     <script type="module" src="/src/reel.js"></script>
     <script type="module" src="/src/ball.js"></script>
