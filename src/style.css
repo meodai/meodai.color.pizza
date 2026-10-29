@@ -889,7 +889,7 @@
   }
   @media (max-width: 48.75em) {
     body:has(.ball__sphere) .shell {
-      padding-inline-start: 4rem;
+      padding-inline-start: 4.5rem;
     }
   }
   .ball__shadow {

@@ -1281,7 +1281,7 @@ function corner(highlight = null) {
   const inset = unit * 2.5;
   const floor = document.documentElement.clientHeight - radius * 2.5;
   const lane = narrow.matches ? null : groove();
-  const x = narrow.matches ? unit * 1.25 : (lane ?? document.documentElement.clientWidth - inset);
+  const x = narrow.matches ? unit * 1.5 : (lane ?? document.documentElement.clientWidth - inset);
   if (highlight) {
     const { top, bottom } = highlight.getBoundingClientRect();
     return [x, Math.min(Math.max((top + bottom) / 2, inset), floor)];
