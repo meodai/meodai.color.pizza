@@ -310,7 +310,7 @@
     display: grid;
     gap: 0.5em;
     position: fixed;
-    inset-block-end: calc(var(--gutter) + 3rem);
+    inset-block-end: calc(var(--gutter) + 2.5rem);
     inset-inline-end: calc(var(--gutter) - 1rem);
     z-index: 85;
     padding: 1rem;
@@ -334,11 +334,11 @@
     z-index: 85;
     display: grid;
     place-items: center;
-    inline-size: 2.25rem;
-    block-size: 2.25rem;
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
     padding: 0;
     border: 1px solid var(--color-rule);
-    background: var(--color-paper);
+    background: linear-gradient(var(--color-paper) 50%, var(--color-accent) 50%) 0 0 / 100% 200%;
     color: var(--color-ink);
     cursor: pointer;
     opacity: 0;
@@ -349,7 +349,8 @@
       transform 0.4s cubic-bezier(0.7, 0, 0.7, 0.3) 0.1s,
       visibility 0.5s,
       color 0.1s,
-      border-color 0.1s;
+      border-color 0.1s,
+      background-position 0.3s cubic-bezier(0.3, 0.7, 0, 1);
   }
   .settings-trigger--visible {
     opacity: 1;
@@ -360,7 +361,8 @@
       transform 0.6s cubic-bezier(0.3, 0.7, 0.2, 1.25) 0.05s,
       visibility 0s,
       color 0.1s,
-      border-color 0.1s;
+      border-color 0.1s,
+      background-position 0.3s cubic-bezier(0.3, 0.7, 0, 1);
   }
   .settings-trigger::before {
     content: "";
@@ -368,6 +370,14 @@
     block-size: 0.875rem;
     border-radius: 50%;
     background: var(--color-accent);
+    transition: background-color 0.3s cubic-bezier(0.3, 0.7, 0, 1);
+  }
+  .settings-trigger:hover {
+    border-color: var(--color-accent);
+    background-position: 0 100%;
+  }
+  .settings-trigger:hover::before {
+    background: var(--color-paper);
   }
   .settings-trigger[aria-expanded="true"] {
     border-color: var(--color-accent);
