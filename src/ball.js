@@ -822,8 +822,9 @@ function resize() {
   }
 }
 
-function lasting({ y, expired }) {
-  return runout > 0 && !expired && y >= pageHeight - runout;
+function lasting(item) {
+  item.kept ??= runout > 0 && item.y >= pageHeight - runout;
+  return item.kept && !item.expired;
 }
 
 function retire(now) {
@@ -1285,10 +1286,7 @@ function corner(highlight = null) {
   const start = title
     ? (title.top + title.bottom) / 2 - nudge + (narrow.matches ? scrollY : 0)
     : floor;
-  const y = start + (floor - start) * scrolled;
-  if (!runout) return [x, y];
-  const past = Math.min(Math.max((scrollY - end) / runout, 0), 1);
-  return [ski(x), y + (innerHeight - runout / 2 - y) * past];
+  return [ski(x), start + (floor - start) * scrolled];
 }
 
 function overrun() {

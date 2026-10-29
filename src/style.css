@@ -143,7 +143,7 @@
 
   .runout {
     grid-column: 1 / -1;
-    block-size: 100dvh;
+    block-size: 100lvh;
     pointer-events: none;
   }
 
