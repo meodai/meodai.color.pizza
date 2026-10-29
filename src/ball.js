@@ -1495,6 +1495,8 @@ function configure() {
     row.style.setProperty("--rank", i);
     row.style.setProperty("--order", rows.length - 1 - i);
   });
+  const dots = [...form.querySelectorAll(".settings__swatch")];
+  dots.forEach((swatch, i) => swatch.style.setProperty("--step", i));
   form.hidden = false;
   trigger = document.querySelector(".settings-trigger");
   if (!trigger) return;
