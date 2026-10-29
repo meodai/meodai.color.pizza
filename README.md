@@ -4,7 +4,8 @@ The personal site of David Aerne, and the domain behind the Bluesky handle
 [@meodai.color.pizza](https://bsky.app/profile/meodai.color.pizza).
 
 A single static page built with [Vite](https://vite.dev) and served by
-Cloudflare Workers as static assets. No JavaScript ships to the browser.
+Cloudflare Workers as static assets. The page reads without JavaScript; a few small
+scripts add the extras on top.
 
 ## Develop
 
@@ -31,4 +32,15 @@ npm run deploy   # build and publish with Wrangler
 - The portrait in `index.html` is an inline black and white SVG drawing that follows `--color-ink`.
 - Titles and text use [Libre Caslon Condensed](https://github.com/ertekinno/libre-caslon-condensed),
   subset to Latin, under the SIL Open Font License (`src/fonts/LibreCaslonCondensed-OFL.txt`).
+- `src/reel.js` lazy-loads the video reel and plays the clip for the highlight in view or under
+  the pointer.
+- `src/ball.js` is the WebGL ball in the run-out that rolls, stamps and leaves a paint trail,
+  with a small settings panel for its look (stamp, size, colors, a Pokéball preset).
+- `src/eyes.js` makes the portrait's eyes follow the pointer on desktop.
+- `src/theme.js` lets `?cl=` and `?cd=` (hex, no `#`) recolor the light and dark themes by
+  running `src/tokens.js` in the browser.
 - `src/projects.js` is a parked draft for a fuller project list; nothing renders it yet.
+
+## License
+
+All rights reserved. The source is public to read, not to reuse. See [LICENSE](LICENSE).

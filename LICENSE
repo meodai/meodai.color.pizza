@@ -1,0 +1,16 @@
+Copyright (c) 2026 David Aerne. All rights reserved.
+
+This repository and everything in it, including the source code, design, text, drawings,
+images, videos and other media, is the property of David Aerne.
+
+The source is public so that it can be read. No license is granted to copy, modify,
+distribute, publish, sublicense or sell it, in whole or in part, or to use it as the basis
+for another website or product, without prior written permission from the copyright holder.
+
+Third-party components keep their own licenses:
+
+- Libre Caslon Condensed, under the SIL Open Font License 1.1
+  (src/fonts/LibreCaslonCondensed-OFL.txt)
+- npm dependencies such as Poline, under the licenses in their packages
+
+For permission, write to david@elastiq.ch.

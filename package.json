@@ -1,6 +1,7 @@
 {
   "name": "meodai",
   "private": true,
+  "license": "UNLICENSED",
   "type": "module",
   "scripts": {
     "dev": "vite",
