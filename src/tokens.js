@@ -71,7 +71,7 @@ function nightBook(light, night) {
   }
 }
 
-export function books({ light = "#0000ee", dark: night = "#0000ee" } = {}) {
+export function books({ light = "#0000ee", dark: night = "#0010cc" } = {}) {
   return {
     light: composeBook("light", [system(light)]),
     night: nightBook(light, night),
