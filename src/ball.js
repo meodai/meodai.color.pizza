@@ -28,6 +28,10 @@ const BANDS = 8;
 const STAMPS = { face: portrait, elastiq, parrot };
 const INITIALS_SPAN = 0.6;
 const WHITE = [1, 1, 1];
+const BLACK = [0, 0, 0];
+const POKEBALL = "#ff4100";
+const SEAM = 0.07;
+const RING = 0.035;
 const TURN = 2000;
 const TILT = 2400;
 const FRICTION = 0.9;
@@ -101,6 +105,7 @@ const BALL_FRAGMENT = `#version 300 es
   uniform vec3 bands[${BANDS}];
   uniform int count;
   uniform bool blended;
+  uniform bool poke;
   uniform vec3 paper;
   uniform vec3 mark;
   uniform float extent;
@@ -130,7 +135,15 @@ const BALL_FRAGMENT = `#version 300 es
       float edge = smoothstep(1.0 - fwidth(f), 1.0, fract(f));
       tint = mix(bands[i], bands[min(i + 1, count - 1)], edge);
     }
-    if (span > 0.0) tint = mix(tint, paper, smoothstep(rim - 0.005, rim, t));
+    if (poke) {
+      float seam = fwidth(body.y);
+      tint = mix(vec3(1.0), paint, smoothstep(-seam, seam, body.y));
+      tint = mix(tint, vec3(0.0), 1.0 - smoothstep(${number(SEAM)} - seam, ${number(SEAM)} + seam, abs(body.y)));
+    }
+    if (span > 0.0) {
+      if (poke) tint = mix(tint, vec3(0.0), smoothstep(rim - ${number(RING)} - 0.005, rim - ${number(RING)}, t));
+      tint = mix(tint, poke && stamped ? vec3(1.0) : paper, smoothstep(rim - 0.005, rim, t));
+    }
     tint = mix(tint, mark, letter(body));
     tint = mix(tint, vec3(1.0), initial(body));
     float light = mix(1.0, 0.4 + 0.75 * max(0.0, dot(n, lamp)), shading);
@@ -391,6 +404,7 @@ function buildColors() {
 function chosen() {
   const { color, custom } = settings;
   if (color === "theme" || color === "cycle") return themed;
+  if (color === "pokeball") return readColor(POKEBALL);
   if (color in palettes) return swatches()[0] ?? themed;
   return readColor(color === "custom" ? custom : color);
 }
@@ -418,6 +432,7 @@ function shuffle(kind) {
 }
 
 function contact() {
+  if (settings.color === "pokeball") return pokeContact();
   const t = Math.acos(Math.min(Math.max(rotate(rotation, [0, 0, -1])[2], -1), 1)) / Math.PI;
   const top = Math.acos(rim()) / Math.PI;
   const colors = swatches();
@@ -428,6 +443,16 @@ function contact() {
     return colors[i].map((v, c) => v + (colors[i + 1][c] - v) * (f - i));
   }
   return colors[Math.max(Math.min(Math.floor((t / top) * n), n - 1), 0)];
+}
+
+function pokeContact() {
+  const [, y, z] = rotate(conjugate(rotation), [0, 0, 1]);
+  const t = Math.acos(Math.min(Math.max(-z, -1), 1)) / Math.PI;
+  const top = Math.acos(rim()) / Math.PI;
+  if (span() > 0 && t > top) return settings.stamp === "hole" ? paper : WHITE;
+  if (span() > 0 && t > top - RING) return BLACK;
+  if (Math.abs(y) < SEAM) return BLACK;
+  return y > 0 ? paint : WHITE;
 }
 
 function toOklab([r, g, b]) {
@@ -477,7 +502,14 @@ function mixPaint() {
   const fade = settings.color === "theme" ? tone : 0;
   paint = accent.map((v, i) => v + (base[i] - v) * fade);
   ink = paint.map(toGamma);
-  mark = settings.color in palettes ? darkest() : dark.matches ? WHITE : paint;
+  mark =
+    settings.color === "pokeball"
+      ? BLACK
+      : settings.color in palettes
+        ? darkest()
+        : dark.matches
+          ? WHITE
+          : paint;
 }
 
 function blend(dt) {
@@ -569,6 +601,7 @@ function setupBall() {
         "bands",
         "count",
         "blended",
+        "poke",
         "paper",
         "mark",
         "extent",
@@ -853,6 +886,7 @@ function paintSphere() {
   const striped = swatches().slice(0, BANDS);
   gl.uniform1i(uniforms.count, striped.length);
   gl.uniform1i(uniforms.blended, settings.color === "gradient" ? 1 : 0);
+  gl.uniform1i(uniforms.poke, settings.color === "pokeball" ? 1 : 0);
   if (striped.length) gl.uniform3fv(uniforms.bands, striped.flat());
   gl.uniform3fv(uniforms.paper, paper);
   gl.uniform3fv(uniforms.mark, mark);
@@ -1063,7 +1097,7 @@ function step(now) {
   const ground = [velocity[0], velocity[1] + carried];
   const speed = Math.hypot(...ground);
   if (height === 0) cycle(speed * dt);
-  if (settings.color in palettes) ink = contact().map(toGamma);
+  if (settings.color in palettes || settings.color === "pokeball") ink = contact().map(toGamma);
   const previous = points.at(-1);
   if (height === 0) {
     const gap = jumped || !grounded || !previous || previous.lifted;
@@ -1424,6 +1458,10 @@ function configure() {
   form.addEventListener("submit", (event) => event.preventDefault());
   form.addEventListener("input", (event) => {
     if (event.target === elements.custom) elements.color.value = "custom";
+    if (event.target.value === "pokeball") {
+      elements.size.value = 5;
+      elements.initials.checked = false;
+    }
     settings = {
       spotlight: elements.spotlight.checked,
       shading: elements.shading.checked,

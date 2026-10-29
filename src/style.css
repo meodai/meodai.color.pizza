@@ -506,9 +506,10 @@
   }
   .settings__box::before {
     z-index: 1;
-    inset-block: 3px;
+    inset-block-start: 3px;
     inset-inline-start: 3px;
-    aspect-ratio: 1;
+    inline-size: calc(0.875rem - 8px);
+    block-size: calc(0.875rem - 8px);
     border: 1px solid currentColor;
     transition:
       translate 0.25s cubic-bezier(0.3, 0.7, 0, 1) 0.1s,
@@ -594,6 +595,11 @@
   }
   .settings__swatch--theme {
     --swatch: var(--color-accent);
+  }
+  .settings__swatch--pokeball {
+    --swatch:
+      radial-gradient(circle, #fff 0 1.5px, #000 1.5px 2.5px, transparent 2.5px),
+      linear-gradient(#ff4100 0 43%, #000 43% 57%, #fff 57%);
   }
   .settings__swatch--cycle {
     --swatch: conic-gradient(in oklch longer hue, oklch(0.7 0.2 30), oklch(0.7 0.2 30));
