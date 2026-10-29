@@ -323,6 +323,10 @@ let unwind = 0;
 let swipe = null;
 let fling = 0;
 let glide = 0;
+let flow = null;
+let touching = false;
+let wheeling = false;
+let handed = false;
 let frame = 0;
 
 function normalize([x, y, z]) {
@@ -1061,8 +1065,11 @@ function step(now) {
   last = now;
   coast(dt);
   const climbing = plunge < depth;
+  handed &&= glide > 0;
   depth =
-    Math.abs(plunge - depth) < 0.5 ? plunge : depth + (plunge - depth) * (1 - Math.exp(-dt / 0.12));
+    handed || Math.abs(plunge - depth) < 0.5
+      ? plunge
+      : depth + (plunge - depth) * (1 - Math.exp(-dt / 0.12));
   swell();
   const shift = camera() - lastScroll;
   lastScroll = camera();
@@ -1272,7 +1279,7 @@ function groove() {
 
 function corner(highlight = null) {
   const inset = unit * 2.5;
-  const floor = document.documentElement.clientHeight - inset;
+  const floor = document.documentElement.clientHeight - radius * 2.5;
   const lane = narrow.matches ? null : groove();
   const x = narrow.matches ? unit * 1.25 : (lane ?? document.documentElement.clientWidth - inset);
   if (highlight) {
@@ -1286,7 +1293,13 @@ function corner(highlight = null) {
   const start = title
     ? (title.top + title.bottom) / 2 - nudge + (narrow.matches ? scrollY : 0)
     : floor;
-  return [ski(x), start + (floor - start) * scrolled];
+  const y = start + (floor - start) * scrolled;
+  return [ski(x), y + (innerHeight / 2 - y) * slope(innerHeight * 8)];
+}
+
+function slope(length = runout + innerHeight) {
+  const t = Math.min(overrun() / length, 1);
+  return t * t * (3 - 2 * t);
 }
 
 function overrun() {
@@ -1298,7 +1311,7 @@ function ski(x) {
   const run = overrun();
   if (!run) return x;
   const width = document.documentElement.clientWidth;
-  const ease = Math.min(run / (runout + innerHeight), 1);
+  const ease = slope();
   const noise =
     Math.sin(run / 310) * 0.5 + Math.sin(run / 170 + 1.7) * 0.3 + Math.sin(run / 530 + 4.1) * 0.2;
   const drift = x + (width / 2 - x) * ease + noise * width * 0.3 * ease;
@@ -1368,15 +1381,34 @@ function travel(distance, event) {
 function coast(dt) {
   if (!glide) return;
   shove(glide * dt);
-  glide *= Math.exp(-dt / 0.35);
+  glide *= Math.exp(-dt / 0.5);
   if (Math.abs(glide) < 20 || (glide < 0 && !plunge)) glide = 0;
 }
 
+function carry() {
+  const now = performance.now();
+  const dt = flow ? (now - flow.time) / 1000 : 0;
+  const speed = dt > 0 && dt < 0.1 ? flow.speed * 0.2 + ((scrollY - flow.y) / dt) * 0.8 : 0;
+  const arrived = bottomed() && flow && !flow.bottomed;
+  const carried = arrived ? Math.max(flow.speed, speed) : 0;
+  flow = { y: scrollY, time: now, speed, bottomed: bottomed() };
+  const bounce = overrun() > 0 ? "none" : "";
+  if (document.documentElement.style.overscrollBehaviorY !== bounce)
+    document.documentElement.style.overscrollBehaviorY = bounce;
+  if (!arrived || touching || wheeling || carried <= 0 || depth) return;
+  glide = carried;
+  handed = true;
+  wake();
+}
+
 function dive(event) {
+  wheeling = true;
   travel(event.deltaY * (event.deltaMode === 1 ? 16 : 1), event);
 }
 
 function drag(event) {
+  touching = event.type !== "touchend";
+  wheeling = false;
   if (event.type === "touchend") {
     glide = swipe && performance.now() - swipe.time < 100 ? fling : 0;
     if (glide) wake();
@@ -1536,7 +1568,7 @@ function start() {
   wake();
   handle.addEventListener("click", release);
   handle.addEventListener("pointerenter", (event) => {
-    if (event.pointerType === "mouse") hop(0.55);
+    if (event.pointerType === "mouse" && Math.hypot(...velocity) < 150) hop(0.55);
   });
   addEventListener("pointermove", follow, { passive: true });
   document.documentElement.addEventListener("pointerleave", () => {
@@ -1551,7 +1583,14 @@ function start() {
   addEventListener("touchstart", drag, { passive: true });
   addEventListener("touchmove", drag, { passive: false });
   addEventListener("touchend", drag, { passive: true });
-  addEventListener("scroll", () => position && wake(), { passive: true });
+  addEventListener(
+    "scroll",
+    () => {
+      carry();
+      if (position) wake();
+    },
+    { passive: true },
+  );
   addEventListener("load", wake);
   document.fonts.ready.then(() => {
     resize();
