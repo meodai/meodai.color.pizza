@@ -513,6 +513,8 @@
     border: 1px solid currentColor;
     transition:
       translate 0.25s cubic-bezier(0.3, 0.7, 0, 1) 0.1s,
+      inline-size 0.25s cubic-bezier(0.3, 0.7, 0, 1) 0.1s,
+      block-size 0.25s cubic-bezier(0.3, 0.7, 0, 1) 0.1s,
       color 0.1s,
       border-color 0.1s,
       background-color 0.1s;
@@ -529,11 +531,15 @@
       background-color 0.1s 0.2s;
   }
   .settings__toggle:has(:checked) .settings__box::before {
-    translate: 0.875rem 0;
+    inline-size: calc(0.875rem - 7px);
+    block-size: calc(0.875rem - 7px);
+    translate: calc(0.875rem - 0.5px) -0.5px;
     border-color: var(--color-paper);
     background: var(--color-paper);
     transition:
       translate 0.25s cubic-bezier(0.3, 0.7, 0, 1),
+      inline-size 0.25s cubic-bezier(0.3, 0.7, 0, 1),
+      block-size 0.25s cubic-bezier(0.3, 0.7, 0, 1),
       border-color 0.1s 0.2s,
       background-color 0.1s 0.2s;
   }
