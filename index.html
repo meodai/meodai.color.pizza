@@ -30,6 +30,34 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@meodai" />
     <link rel="stylesheet" href="/src/style.css" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "@id": "https://meodai.color.pizza/#person",
+        "name": "David Aerne",
+        "url": "https://meodai.color.pizza/",
+        "email": "mailto:david@elastiq.ch",
+        "jobTitle": ["Computational Designer", "Interaction Developer", "Software Artist"],
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Zürich",
+          "addressCountry": "CH"
+        },
+        "worksFor": {
+          "@type": "Organization",
+          "name": "Elastiq",
+          "url": "https://elastiq.ch/"
+        },
+        "sameAs": [
+          "https://bsky.app/profile/meodai.color.pizza",
+          "https://x.com/meodai",
+          "https://github.com/meodai",
+          "https://codepen.io/meodai",
+          "https://www.linkedin.com/in/davidaerne/"
+        ]
+      }
+    </script>
     <script>
       (() => {
         const params = new URLSearchParams(location.search);
@@ -133,7 +161,9 @@
     </svg>
     <a class="skip-link" href="#main">Skip to content</a>
     <div class="shell">
-      <article class="shell__intro intro" aria-label="Introduction">
+      <article class="shell__intro intro h-card" aria-label="Introduction">
+        <data class="u-url u-uid" value="https://meodai.color.pizza/" hidden></data>
+        <data class="p-org" value="Elastiq" hidden></data>
         <div
           class="intro__portrait portrait"
           role="img"
@@ -270,12 +300,12 @@
             />
           </svg>
         </div>
-        <h1 class="intro__name">David Aerne</h1>
+        <h1 class="intro__name p-name">David Aerne</h1>
         <p class="intro__role">
-          Computational Designer · Interaction Developer<br /><a href="https://elastiq.ch"
-            >Elastiq</a
-          >
-          · Zürich
+          <span class="p-job-title">Computational Designer</span> ·
+          <span class="p-job-title">Interaction Developer</span><br />
+          <span class="p-job-title">Software Artist</span> <span class="intro__dash"></span>
+          <span class="p-locality">Zürich</span>
         </p>
         <div class="intro__reel reel" aria-hidden="true">
           <div class="reel__track">
@@ -346,17 +376,19 @@
           </div>
         </div>
         <aside class="intro__links" aria-label="Social links">
-          <a class="intro__link" rel="me" href="https://bsky.app/profile/meodai.color.pizza"
+          <a class="intro__link u-url" rel="me" href="https://bsky.app/profile/meodai.color.pizza"
             >Bluesky</a
           >
-          <a class="intro__link" rel="me" href="https://x.com/meodai">X</a>
-          <a class="intro__link" rel="me" href="https://github.com/meodai">GitHub</a>
-          <a class="intro__link" rel="me" href="https://codepen.io/meodai">CodePen</a>
-          <a class="intro__link" rel="me" href="https://www.linkedin.com/in/davidaerne/"
+          <a class="intro__link u-url" rel="me" href="https://x.com/meodai">X</a>
+          <a class="intro__link u-url" rel="me" href="https://github.com/meodai">GitHub</a>
+          <a class="intro__link u-url" rel="me" href="https://codepen.io/meodai">CodePen</a>
+          <a class="intro__link u-url" rel="me" href="https://www.linkedin.com/in/davidaerne/"
             >LinkedIn</a
           >
           <a class="intro__link" href="https://elastiq.ch">elastiq.ch</a>
-          <a class="intro__link" rel="me" href="mailto:david@elastiq.ch">david@elastiq.ch</a>
+          <a class="intro__link u-email" rel="me" href="mailto:david@elastiq.ch"
+            >david@elastiq.ch</a
+          >
         </aside>
       </article>
 
