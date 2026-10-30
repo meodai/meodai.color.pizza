@@ -5,7 +5,7 @@ import { Poline, positionFunctions } from "poline";
 
 const moving = matchMedia("(prefers-reduced-motion: no-preference)");
 const hovering = matchMedia("(hover: hover) and (pointer: fine)");
-const narrow = matchMedia("(max-width: 48.75em)");
+const narrow = matchMedia("(max-width: 33.75em)");
 const dark = matchMedia("(prefers-color-scheme: dark)");
 
 const STIFFNESS = 70;
@@ -910,6 +910,7 @@ function place() {
   const [dockX, dockY] = corner();
   const dockRadius = dock.offsetWidth / 2;
   dock.style.translate = `${dockX - dockRadius}px ${dockY - dockRadius}px`;
+  dispatchEvent(new CustomEvent("ballmove", { detail: { x, y } }));
 }
 
 function stamp(count, x, y, size, [px, py, pz], edge, fade, color) {
