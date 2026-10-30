@@ -1507,6 +1507,9 @@ function configure() {
     if (event.target.value === "pokeball") {
       elements.size.value = 5;
       elements.initials.checked = false;
+      elements.spotlight.checked = true;
+      elements.shading.checked = true;
+      elements.shadow.checked = true;
     }
     settings = {
       spotlight: elements.spotlight.checked,
