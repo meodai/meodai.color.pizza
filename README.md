@@ -35,7 +35,9 @@ npm run deploy   # build and publish with Wrangler
 - `src/reel.js` lazy-loads the video reel and plays the clip for the highlight in view or under
   the pointer.
 - `src/ball.js` is the WebGL ball in the run-out that rolls, stamps and leaves a paint trail,
-  with a small settings panel for its look (stamp, size, colors, a Pokéball preset).
+  with a small settings panel for its look (stamp, size, colors, a Pokéball preset). The trail's
+  centripetal Catmull-Rom smoothing is based on
+  [this pen by shubniggurath](https://codepen.io/shubniggurath/pen/EaZbGNy).
 - `src/eyes.js` makes the portrait's eyes follow the pointer on desktop.
 - `src/theme.js` lets `?cl=` and `?cd=` (hex, no `#`) recolor the light and dark themes by
   running `src/tokens.js` in the browser.

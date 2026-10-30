@@ -961,6 +961,24 @@ function press(now, ground) {
   });
 }
 
+function spline(p0, p1, p2, p3) {
+  const knot = (a, b) => Math.sqrt(Math.hypot(b.x - a.x, b.y - a.y)) || 1e-4;
+  const t1 = knot(p0, p1);
+  const t2 = t1 + knot(p1, p2);
+  const t3 = t2 + knot(p2, p3);
+  const lerp = (u, v, from, to, t) => u + ((v - u) * (t - from)) / (to - from);
+  const axis = (a, b, c, d, t) => {
+    const ab = lerp(a, b, 0, t1, t);
+    const bc = lerp(b, c, t1, t2, t);
+    const cd = lerp(c, d, t2, t3, t);
+    return lerp(lerp(ab, bc, 0, t2, t), lerp(bc, cd, t1, t3, t), t1, t2, t);
+  };
+  return (k) => {
+    const t = t1 + (t2 - t1) * k;
+    return [axis(p0.x, p1.x, p2.x, p3.x, t), axis(p0.y, p1.y, p2.y, p3.y, t)];
+  };
+}
+
 function paintTrail(now) {
   const gl = trailGl;
   if (gl.isContextLost()) return;
@@ -979,13 +997,21 @@ function paintTrail(now) {
     const fade = Math.sqrt(life(b, now));
     const spacing = Math.max(1.5, Math.min(from.width, b.width) * fade * 0.25);
     const steps = Math.max(1, Math.ceil(Math.hypot(b.x - from.x, b.y - from.y) / spacing));
+    const next = points[i + 1];
+    const curve = spline(
+      (!from.gap && points[i - 2]) || from,
+      from,
+      b,
+      next && !next.gap ? next : b,
+    );
     for (let s = 1; s <= steps; s++) {
       const k = s / steps;
       const mix = (u, v) => u + (v - u) * k;
+      const [x, y] = curve(k);
       count = stamp(
         count,
-        mix(from.x, b.x),
-        mix(from.y, b.y),
+        x,
+        y,
         (mix(from.width, b.width) / 2) * fade,
         [mix(from.pole[0], b.pole[0]), mix(from.pole[1], b.pole[1]), mix(from.pole[2], b.pole[2])],
         mix(from.edge, b.edge),
@@ -1392,6 +1418,11 @@ function carry() {
   const arrived = bottomed() && flow && !flow.bottomed;
   const carried = arrived ? Math.max(flow.speed, speed) : 0;
   flow = { y: scrollY, time: now, speed, bottomed: bottomed() };
+  if (plunge && runout && scrollY <= pageHeight - runout - innerHeight) {
+    plunge = 0;
+    glide = 0;
+    unwind = 0;
+  }
   const bounce = overrun() > 0 ? "none" : "";
   if (document.documentElement.style.overscrollBehaviorY !== bounce)
     document.documentElement.style.overscrollBehaviorY = bounce;
