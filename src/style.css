@@ -36,7 +36,6 @@
   }
   a {
     color: inherit;
-    text-decoration: none;
   }
   svg {
     display: block;
@@ -95,6 +94,21 @@
     font: var(--text) / 1.5 var(--font);
     text-wrap: pretty;
     -webkit-font-smoothing: antialiased;
+  }
+  a,
+  abbr {
+    text-decoration: underline;
+    text-decoration-color: var(--color-underline);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.1875rem;
+  }
+  a:hover,
+  abbr:hover {
+    text-decoration-thickness: 2px;
+  }
+  abbr {
+    text-decoration-style: dotted;
+    cursor: help;
   }
   ::selection {
     background: var(--color-accent);
@@ -170,6 +184,10 @@
 }
 
 @layer components {
+  .sprite {
+    display: none;
+  }
+
   .skip-link {
     position: fixed;
     z-index: 90;
@@ -177,18 +195,18 @@
     inset-inline-start: 1.125rem;
     padding: 0.75rem 1.125rem;
     background: var(--color-paper);
+    text-decoration: none;
   }
   .skip-link:focus {
     inset-block-start: 0.875rem;
   }
 
-  .link {
-    text-decoration: underline;
-    text-decoration-color: var(--color-underline);
-    text-decoration-thickness: 1px;
-    text-underline-offset: 0.1875rem;
+  .intro__link:not(:hover),
+  .highlight__link:not(:hover) {
+    text-decoration: none;
   }
-  .link__icon {
+
+  .link-icon {
     display: inline-block;
     block-size: 1.1em;
     aspect-ratio: 130 / 158;
@@ -196,38 +214,27 @@
     vertical-align: -0.2em;
     transition: scale 0.2s;
   }
-  .link__icon--elastiq {
+  .link-icon--elastiq {
     block-size: 0.8em;
     aspect-ratio: 238 / 175;
     margin-inline-start: 0.12em;
     overflow: visible;
     vertical-align: -0.05em;
-  }
-  .link:not(:hover, :focus-visible) .link__icon {
-    scale: 0.8;
-  }
-  .link__icon > * {
+    color: #f04e45;
     transition:
-      fill 0.2s,
-      stroke 0.2s;
+      scale 0.2s,
+      color 0.2s;
   }
-  .link:not(:hover, :focus-visible) .link__icon > path {
-    fill: var(--color-accent);
+  :not(:hover, :focus-visible) > .link-icon {
+    scale: 0.8;
+    --link-icon-fill: var(--color-accent);
+    --link-icon-eye: var(--color-paper);
   }
-  .link:not(:hover, :focus-visible) .link__icon--elastiq > path {
-    fill: none;
-    stroke: var(--color-accent);
+  .link-icon__shape {
+    transition: fill 0.2s;
   }
-  .link:not(:hover, :focus-visible) .link__icon > circle {
-    fill: var(--color-paper);
-  }
-  .link:hover,
-  .intro__link:hover,
-  .highlight__link:hover {
-    text-decoration: underline;
-    text-decoration-color: var(--color-underline);
-    text-decoration-thickness: 2px;
-    text-underline-offset: 0.1875rem;
+  :not(:hover, :focus-visible) > .link-icon--elastiq {
+    color: var(--color-accent);
   }
 
   .title {

@@ -60,6 +60,77 @@
     </script>
   </head>
   <body>
+    <svg class="sprite" aria-hidden="true">
+      <symbol id="iconElastiq" viewBox="0 0 238 175" overflow="visible">
+        <path
+          d="M37.691 70.72c25.89-7.67 59 2.55 80.49-31.66 25.23-40.099 60.94-44.679 85.27-31.619 34.2 18.36 31.67 68.27 7.58 90.7-27.42 25.53-29.58 52.91-13.68 67.24 22.95 20.68 47.1-2.67 35.85-19.93-8.94-13.73-31.93-25.89-98.1 6.9-65.32 32.36-129.62 19-133.91-32.42-1.03-12.53 2.88-39.25 36.5-49.21z"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="22"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </symbol>
+      <symbol id="iconParrot" viewBox="20 12 130 158">
+        <path
+          class="link-icon__shape"
+          d="M30 170h80v-60a39.8 39.8 0 0 0-5.25-19.81A80 80 0 0 0 30 170z"
+          fill="var(--link-icon-fill, #f69)"
+        />
+        <path
+          class="link-icon__shape"
+          d="M80.36 81.34L63 71.34c-.73-.42-1.42-.87-2.1-1.34H20a30 30 0 0 0 30 30h20a10.07 10.07 0 0 1 1.15.07 79.54 79.54 0 0 1 13.28-5.87 10 10 0 0 0-4.07-12.86z"
+          fill="var(--link-icon-fill, #ed0)"
+        />
+        <path
+          class="link-icon__shape"
+          d="M70 70h-9.06c.68.47 1.37.92 2.1 1.34l17.32 10a10 10 0 0 1 4.07 12.86 79.64 79.64 0 0 1 20.32-4A40 40 0 0 0 70 70z"
+          fill="var(--link-icon-fill, #5a0)"
+        />
+        <path
+          class="link-icon__shape"
+          d="M98.66 70.36L88.66 53c-.42-.73-.8-1.46-1.15-2.21L78 45.36l-26-15A30 30 0 0 0 60.94 70H70a39.86 39.86 0 0 1 28 11.41 10 10 0 0 0 .66-11.05z"
+          fill="var(--link-icon-fill, #6c6)"
+        />
+        <path
+          class="link-icon__shape"
+          d="M120 70V50c0-.84 0-1.67.11-2.49L114.64 38l-15-26a30 30 0 0 0-12.13 38.83l7.85 4.53a39.86 39.86 0 0 1 18.51 23.86A10 10 0 0 0 120 70z"
+          fill="var(--link-icon-fill, #19f)"
+        />
+        <path
+          class="link-icon__shape"
+          d="M114 100.2a40 40 0 0 0-18.64-44.84l-7.85-4.53c.35.74.73 1.48 1.15 2.21l10 17.32A10 10 0 0 1 98 81.41 40 40 0 0 1 108.74 100H110q2 0 4 .2z"
+          fill="var(--link-icon-fill, #176)"
+        />
+        <path
+          class="link-icon__shape"
+          d="M120.11 47.51l4.53 7.85a40 40 0 0 1-4.25 46 39.74 39.74 0 0 1 9 3.63A40 40 0 0 0 150 70V20a30 30 0 0 0-29.89 27.51z"
+          fill="var(--link-icon-fill, #f69)"
+        />
+        <path
+          class="link-icon__shape"
+          d="M110 110a39.81 39.81 0 0 0 19.37-5 39.47 39.47 0 0 0-9-3.63 40 40 0 0 0 4.25-46l-4.53-7.85c-.07.82-.11 1.65-.11 2.49V70a10 10 0 0 1-6.13 9.22 40 40 0 0 1 .17 21s-2.51-.2-4.05-.2h-1.27A39.89 39.89 0 0 1 110 110z"
+          fill="var(--link-icon-fill, #139)"
+        />
+        <path
+          class="link-icon__shape"
+          d="M129.37 105a39.81 39.81 0 0 1-19.37 5v20a10 10 0 0 0 10 10h30a40 40 0 0 0-20.63-35z"
+          fill="var(--link-icon-fill, #19f)"
+        />
+        <path
+          class="link-icon__shape"
+          d="M120 140a10 10 0 0 1-10-10v40a30 30 0 0 0 30-30z"
+          fill="var(--link-icon-fill, #ed0)"
+        />
+        <circle
+          class="link-icon__shape"
+          cx="87.5"
+          cy="127.5"
+          r="7.5"
+          fill="var(--link-icon-eye, #fff)"
+        />
+      </symbol>
+    </svg>
     <a class="skip-link" href="#main">Skip to content</a>
     <div class="shell">
       <article class="shell__intro intro" aria-label="Introduction">
@@ -202,7 +273,6 @@
         <h1 class="intro__name">David Aerne</h1>
         <p class="intro__role">
           Computational Designer · Interaction Developer<br /><a
-            class="link"
             href="https://elastiq.ch"
             >Elastiq</a
           >
@@ -302,29 +372,17 @@
             </p>
             <p class="copy">
               These questions tend to turn into
-              <a class="link" href="https://codepen.io/meodai">prototypes</a>,
-              <a class="link" href="#proud">creative tools</a> and
-              <a class="link" href="https://github.com/meodai">open-source projects</a>. Color has
+              <a href="https://codepen.io/meodai">prototypes</a>,
+              <a href="#proud">creative tools</a> and
+              <a href="https://github.com/meodai">open-source projects</a>. Color has
               become a recurring topic, but the underlying interest is broader: finding 
               connections between systems, aesthetics and human interaction, then making them
-              tangible and playful.
+              tangible.
             </p>
             <p class="copy">
               Through
-              <a class="link" href="https://elastiq.ch/"
-                >Elastiq<svg
-                  class="link__icon link__icon--elastiq"
-                  viewBox="0 0 238 175"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M37.691 70.72c25.89-7.67 59 2.55 80.49-31.66 25.23-40.099 60.94-44.679 85.27-31.619 34.2 18.36 31.67 68.27 7.58 90.7-27.42 25.53-29.58 52.91-13.68 67.24 22.95 20.68 47.1-2.67 35.85-19.93-8.94-13.73-31.93-25.89-98.1 6.9-65.32 32.36-129.62 19-133.91-32.42-1.03-12.53 2.88-39.25 36.5-49.21z"
-                    fill="none"
-                    stroke="#f04e45"
-                    stroke-width="22"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  /></svg></a
+              <a href="https://elastiq.ch/"
+                >Elastiq<svg class="link-icon link-icon--elastiq" aria-hidden="true"><use href="#iconElastiq" /></svg></a
               >, I help teams and people turn complicated ideas into things that are useful and enjoyable
               to use. And when an idea is too niche, too weird or simply too fun not to pursue, I
               build it myself, like the projects below.
@@ -344,16 +402,16 @@
             <div class="highlight__media"></div>
             <p class="highlight__text copy">
               It started because
-              <a class="link" href="https://en.wikipedia.org/wiki/Lists_of_colors"
+              <a href="https://en.wikipedia.org/wiki/Lists_of_colors"
                 >Wikipedia's color names</a
               >
               weren't nearly enough for me. Different reds shared the same name, and some of the
               existing names had histories I wasn't comfortable perpetuating. So I started
               collecting, curating and inventing better ones. 32,000 names later, it's become an ongoing personal
               project,
-              <a class="link" href="https://meodai.github.io/color-names-timeline/"
+              <a href="https://meodai.github.io/color-names-timeline/"
                 >a playground for data visualisation</a
-              >, and an excuse to invent names wherever I travel. Many of them have stories
+              >, and an excuse to name colors wherever I travel. Many of them have stories
               attached or remind me of a particular place, person or moment.
             </p>
           </article>
@@ -366,7 +424,7 @@
               I stumbled across a simple idea: draw a straight line through a polar representation
               of color and see what happens. The resulting palettes were surprisingly beautiful.
               Poline grew out of that discovery into a tool for exploring color relationships in a
-              different way. It's a good example of what I love most: a simple mathematical idea
+              different way. It's a good example of what I love most: a small mathematical idea
               opening up a whole new creative space.
             </p>
           </article>
@@ -379,7 +437,6 @@
               I've always been fascinated by the way people throughout history have tried to
               organise and explain color. RYBitten lets me explore and recreate
               <a
-                class="link"
                 href="https://publicdomainreview.org/collection/colour-wheels-charts-and-tables-through-history/"
                 >color wheels from historical color books</a
               >, bringing old systems into a new context. It's part research project, part
@@ -393,7 +450,7 @@
             <div class="highlight__media"></div>
             <p class="highlight__text copy">
               I love
-              <a class="link" href="https://www.artnet.com/artists/erwin-heerich/">Erwin Heerich</a
+              <a href="https://www.artnet.com/artists/erwin-heerich/">Erwin Heerich</a
               >'s work, particularly its clarity, geometry and restrained use of form. It also
               connects to my longstanding love of pixel art and minimal 3D. I built a tiny engine
               that translates some of these ideas into plain SVG, so I can keep exploring them in my
@@ -406,8 +463,10 @@
             </h3>
             <div class="highlight__media"></div>
             <p class="highlight__text copy">
-              I grew up with MS-DOS interfaces and the weird, <a class="link" href="https://scenelist.org/">wonderful typography</a> in <abbr title="Not For Openers">.NFO</abbr> files. Unicode characters have been my icons ever since. 
-              Finding the right ones was always a pain, so I built my own tool. Naturally, that became an
+              I grew up with MS-DOS interfaces and the weird,
+              <a href="https://en.wikipedia.org/wiki/.nfo">wonderful typography</a> in
+              <abbr title="info">.NFO</abbr> files. Unicode characters have been my
+              icons ever since. Finding the right ones was always a pain, so I built my own tool. Naturally, that became an
               opportunity to experiment with embeddings and see how new ways of organising
               information can make searching and exploring more intuitive.
             </p>
@@ -435,8 +494,7 @@
               observation became Ray Color, a tool for generating palettes by changing the
               conditions around an object rather than manually choosing individual colors. What I
               like about it: the palette emerges from a system instead of a pile of separate
-              choices. Modifying the conditions changes the palette, while maintaining a sense of
-              continuity.
+              choices. Move a light and the palette shifts, but its colors still feel related.
             </p>
           </article>
           <article class="highlight" data-video="pickypalette">
@@ -448,7 +506,7 @@
               Pixel artists have always amazed me with how they shape their palettes. Creating a
               palette is as much an art as placing the pixels: when you restrict yourself to a few
               colors, every one of them counts. Inspired by
-              <a class="link" href="https://pixeljoint.com/forum/forum_posts.asp?TID=16247"
+              <a href="https://pixeljoint.com/forum/forum_posts.asp?TID=16247"
                 >tools that analyse palettes after the fact</a
               >, I built a way to sculpt a palette directly on the color model itself. I love the
               almost tactile feeling of mixing colors and seeing how distinct or close each one is
@@ -466,7 +524,7 @@
               godfather for getting me the Game Boy I wasn't allowed to have, and to my uncles, who
               owned a suspiciously large number of consoles. (Apologies to all the parents in
               Fribourg whose doorbells I rang at 7 in the morning to ask if their kids could play
-              NES with me)
+              NES with me.)
             </p>
             <p class="copy">
               As a teenager, I started Frilan, organising a big LAN party in Fribourg. Later came
@@ -486,23 +544,10 @@
             </p>
             <p class="copy">
               Today, I run
-              <a class="link" href="https://elastiq.ch/"
-                >Elastiq<svg
-                  class="link__icon link__icon--elastiq"
-                  viewBox="0 0 238 175"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M37.691 70.72c25.89-7.67 59 2.55 80.49-31.66 25.23-40.099 60.94-44.679 85.27-31.619 34.2 18.36 31.67 68.27 7.58 90.7-27.42 25.53-29.58 52.91-13.68 67.24 22.95 20.68 47.1-2.67 35.85-19.93-8.94-13.73-31.93-25.89-98.1 6.9-65.32 32.36-129.62 19-133.91-32.42-1.03-12.53 2.88-39.25 36.5-49.21z"
-                    fill="none"
-                    stroke="#f04e45"
-                    stroke-width="22"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  /></svg
-              ></a>
+              <a href="https://elastiq.ch/"
+                >Elastiq<svg class="link-icon link-icon--elastiq" aria-hidden="true"><use href="#iconElastiq" /></svg></a>
               in Zürich and look after the
-              <a class="link" href="https://z43.network/">z43 co-working space</a>. I love sharing
+              <a href="https://z43.network/">z43 co-working space</a>. I love sharing
               what I learn, whether that's speaking at conferences and universities or teaching
               creative programming to beginners, for free. With Elastiq, I work at the intersection
               of design and technology. My own projects give me the freedom to follow ideas wherever
@@ -511,16 +556,16 @@
             <p class="copy">
               I rarely consider a project finished. I release things when they're good enough to be
               useful and presentable, then keep refining, expanding and occasionally breaking them for years.
-              <a class="link" href="https://github.com/meodai">Open source</a> is a big part of
+              <a href="https://github.com/meodai">Open source</a> is a big part of
               that: I like making tools that other people can use, learn from, adapt, or take
               somewhere I never imagined.
             </p>
             <p class="copy">
               Along the way, I've had the chance to work with artists I admire, including
-              <a class="link" href="https://rikoostenbroek.com/">Rik Oostenbroek</a> on
-              <a class="link" href="https://verloop.xyz/">Verloop — Dégradé</a>, a book exploring
+              <a href="https://rikoostenbroek.com/">Rik Oostenbroek</a> on
+              <a href="https://verloop.xyz/">Verloop — Dégradé</a>, a book exploring
               color and gradients. In 2026, I was genuinely surprised to win a
-              <a class="link" href="https://www.schweizerkulturpreise.ch/en/david-aerne-2026-en"
+              <a href="https://www.schweizerkulturpreise.ch/en/david-aerne-2026-en"
                 >Swiss Design Award</a
               >
               in the Interaction Design category for my work around color.
@@ -541,67 +586,17 @@
             </p>
             <p class="copy">
               If you've found something useful here, you can
-              <a class="link" href="https://names.color.pizza/adopt/"
-                >adopt a color<svg class="link__icon" viewBox="20 12 130 158" aria-hidden="true">
-                  <path
-                    d="M30 170h80v-60a39.8 39.8 0 0 0-5.25-19.81A80 80 0 0 0 30 170z"
-                    fill="#f69"
-                  />
-                  <path
-                    d="M80.36 81.34L63 71.34c-.73-.42-1.42-.87-2.1-1.34H20a30 30 0 0 0 30 30h20a10.07 10.07 0 0 1 1.15.07 79.54 79.54 0 0 1 13.28-5.87 10 10 0 0 0-4.07-12.86z"
-                    fill="#ed0"
-                  />
-                  <path
-                    d="M70 70h-9.06c.68.47 1.37.92 2.1 1.34l17.32 10a10 10 0 0 1 4.07 12.86 79.64 79.64 0 0 1 20.32-4A40 40 0 0 0 70 70z"
-                    fill="#5a0"
-                  />
-                  <path
-                    d="M98.66 70.36L88.66 53c-.42-.73-.8-1.46-1.15-2.21L78 45.36l-26-15A30 30 0 0 0 60.94 70H70a39.86 39.86 0 0 1 28 11.41 10 10 0 0 0 .66-11.05z"
-                    fill="#6c6"
-                  />
-                  <path
-                    d="M120 70V50c0-.84 0-1.67.11-2.49L114.64 38l-15-26a30 30 0 0 0-12.13 38.83l7.85 4.53a39.86 39.86 0 0 1 18.51 23.86A10 10 0 0 0 120 70z"
-                    fill="#19f"
-                  />
-                  <path
-                    d="M114 100.2a40 40 0 0 0-18.64-44.84l-7.85-4.53c.35.74.73 1.48 1.15 2.21l10 17.32A10 10 0 0 1 98 81.41 40 40 0 0 1 108.74 100H110q2 0 4 .2z"
-                    fill="#176"
-                  />
-                  <path
-                    d="M120.11 47.51l4.53 7.85a40 40 0 0 1-4.25 46 39.74 39.74 0 0 1 9 3.63A40 40 0 0 0 150 70V20a30 30 0 0 0-29.89 27.51z"
-                    fill="#f69"
-                  />
-                  <path
-                    d="M110 110a39.81 39.81 0 0 0 19.37-5 39.47 39.47 0 0 0-9-3.63 40 40 0 0 0 4.25-46l-4.53-7.85c-.07.82-.11 1.65-.11 2.49V70a10 10 0 0 1-6.13 9.22 40 40 0 0 1 .17 21s-2.51-.2-4.05-.2h-1.27A39.89 39.89 0 0 1 110 110z"
-                    fill="#139"
-                  />
-                  <path
-                    d="M129.37 105a39.81 39.81 0 0 1-19.37 5v20a10 10 0 0 0 10 10h30a40 40 0 0 0-20.63-35z"
-                    fill="#19f"
-                  />
-                  <path d="M120 140a10 10 0 0 1-10-10v40a30 30 0 0 0 30-30z" fill="#ed0" />
-                  <circle cx="87.5" cy="127.5" r="7.5" fill="#fff" /></svg></a
+              <a href="https://names.color.pizza/adopt/"
+                >adopt a color<svg class="link-icon" aria-hidden="true"><use href="#iconParrot" /></svg></a
               >. Each color can be adopted just once, making you its one and only patron, with your
               name attached to it. Your support helps keep Color Names, its API and my other
               open-source projects running.
             </p>
             <p class="copy">
               You can also
-              <a class="link" href="https://github.com/sponsors/meodai">sponsor me on GitHub</a>, or
-              <a class="link" href="https://elastiq.ch/"
-                >work with me through Elastiq<svg
-                  class="link__icon link__icon--elastiq"
-                  viewBox="0 0 238 175"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M37.691 70.72c25.89-7.67 59 2.55 80.49-31.66 25.23-40.099 60.94-44.679 85.27-31.619 34.2 18.36 31.67 68.27 7.58 90.7-27.42 25.53-29.58 52.91-13.68 67.24 22.95 20.68 47.1-2.67 35.85-19.93-8.94-13.73-31.93-25.89-98.1 6.9-65.32 32.36-129.62 19-133.91-32.42-1.03-12.53 2.88-39.25 36.5-49.21z"
-                    fill="none"
-                    stroke="#f04e45"
-                    stroke-width="22"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  /></svg></a
+              <a href="https://github.com/sponsors/meodai">sponsor me on GitHub</a>, or
+              <a href="https://elastiq.ch/"
+                >work with me through Elastiq<svg class="link-icon link-icon--elastiq" aria-hidden="true"><use href="#iconElastiq" /></svg></a
               >.
             </p>
           </div>
