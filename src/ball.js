@@ -277,8 +277,6 @@ let settings = {
   color: "theme",
   custom: "#0000ee",
 };
-let base = [0, 0, 0];
-let tone = 0;
 let paint = [0, 0, 0];
 let paper = [1, 1, 1];
 let mark = [0, 0, 0];
@@ -400,7 +398,6 @@ function buildColors() {
   const root = getComputedStyle(document.documentElement);
   themed = readColor(root.getPropertyValue(dark.matches ? "--color-underline" : "--color-accent"));
   accent = chosen();
-  base = readColor(root.getPropertyValue("--color-ink"));
   mixPaint();
   drawn = null;
 }
@@ -503,8 +500,7 @@ function darkest() {
 }
 
 function mixPaint() {
-  const fade = settings.color === "theme" ? tone : 0;
-  paint = accent.map((v, i) => v + (base[i] - v) * fade);
+  paint = accent;
   ink = paint.map(toGamma);
   mark =
     settings.color === "pokeball"
@@ -514,15 +510,6 @@ function mixPaint() {
         : dark.matches
           ? WHITE
           : paint;
-}
-
-function blend(dt) {
-  const root = document.documentElement;
-  const goal = scrollY + innerHeight >= root.scrollHeight - 2 ? 1 : 0;
-  if (tone === goal) return true;
-  tone = Math.abs(goal - tone) < 0.01 ? goal : tone + (goal - tone) * (1 - Math.exp(-dt / 0.15));
-  mixPaint();
-  return false;
 }
 
 function compile(gl, vertex, fragment, names) {
@@ -876,7 +863,7 @@ function axes() {
 }
 
 function paintSphere() {
-  const key = `${rotation.join()},${height},${lamp.join()},${tone},${grow},${paint.join()},${swatches().join()},${JSON.stringify(settings)}`;
+  const key = `${rotation.join()},${height},${lamp.join()},${grow},${paint.join()},${swatches().join()},${JSON.stringify(settings)}`;
   if (key === drawn || sphereGl.isContextLost()) return;
   drawn = key;
   const gl = sphereGl;
@@ -1177,7 +1164,6 @@ function step(now) {
   prints = prints.filter((print) => life(print, now) > 0);
 
   const lit = aim(dt);
-  const toned = blend(dt);
   paintTrail(now);
   paintSphere();
   place();
@@ -1187,7 +1173,6 @@ function step(now) {
     !glide &&
     depth === plunge &&
     lit &&
-    toned &&
     height === 0 &&
     speed < 0.5 &&
     Math.hypot(tx - position[0], ty - position[1]) < 0.5;
